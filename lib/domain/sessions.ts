@@ -1,6 +1,6 @@
 import { getBooking } from "@/lib/domain/bookings";
 import { getAppNow } from "@/lib/domain/clock";
-import { ensureRoom, meetingToken, roomNameForBooking, roomNameForTest } from "@/lib/daily";
+import { issueCall, roomNameForBooking, roomNameForTest } from "@/lib/daily";
 import { admin } from "@/lib/supabase/admin";
 
 export async function joinSession(bookingId: string, personId: string, displayName: string) {
@@ -16,14 +16,11 @@ export async function joinSession(bookingId: string, personId: string, displayNa
   if (appNow.getTime() < start - 10 * 60 * 1000) return { ok: false as const, error: "You can join from 10 minutes before the start." };
   if (appNow.getTime() > end + 30 * 60 * 1000) return { ok: false as const, error: "The join window for this session has closed." };
   const name = booking.daily_room_name || roomNameForBooking(booking.id);
-  const exp = Math.floor(end / 1000) + 3 * 60 * 60;
-  const room = await ensureRoom(name, exp);
-  if (!room.ok) return room;
+  const token = await issueCall(name, displayName, Math.floor(end / 1000) + 3 * 60 * 60, 2);
+  if (!token.ok) return token;
   if (!booking.daily_room_name) {
     await admin().from("bookings").update({ daily_room_name: name }).eq("id", booking.id);
   }
-  const token = await meetingToken(name, displayName, exp);
-  if (!token.ok) return token;
   const { data: next } = await admin()
     .from("bookings")
     .select("id")
@@ -51,8 +48,5 @@ export async function logSessionEvent(bookingId: string, personId: string, event
 
 export async function testCall(personaId: string, displayName: string) {
   const name = roomNameForTest(personaId);
-  const exp = Math.floor(Date.now() / 1000) + 2 * 60 * 60;
-  const room = await ensureRoom(name, exp);
-  if (!room.ok) return room;
-  return meetingToken(name, displayName, exp);
+  return issueCall(name, displayName, Math.floor(Date.now() / 1000) + 2 * 60 * 60, 1);
 }

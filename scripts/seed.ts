@@ -64,11 +64,14 @@ async function wipe() {
     "gosi_employment",
     "gosi_people",
   ];
+  const key: Record<string, string> = { feedback: "booking_id", retiree_profiles: "person_id" };
   for (const table of tables) {
-    const { error } = await db.from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const column = key[table] ?? "id";
+    const { error } = await db.from(table).delete().neq(column, "00000000-0000-0000-0000-000000000000");
     if (error) throw new Error(`${table}: ${error.message}`);
   }
-  await db.from("audit_log").delete().gte("id", 0);
+  const { error } = await db.from("audit_log").delete().gte("id", 0);
+  if (error) throw new Error(`audit_log: ${error.message}`);
 }
 
 type Person = {
@@ -292,7 +295,7 @@ export async function seedDemo() {
 
   const liveAt = new Date(appNow.getTime() - 10 * 86400000).toISOString();
   const profiles = [
-    { person_id: pid("ret-mona"), state: "draft", application_step: 3, discipline_role: "Arabic teacher", languages: ["Arabic", "English"], intro: "I taught Arabic for many years.", show_employers: true, show_dates: true, show_sector: true },
+    { person_id: pid("ret-mona"), state: "draft", application_step: 3, discipline_role: "Arabic teacher", languages: ["Arabic", "English"], intro: "I taught Arabic for many years." },
     { person_id: pid("ret-saad"), state: "pending_review", application_step: 5, discipline_role: "Accountant", languages: ["Arabic"], specializations: "VAT, bookkeeping", intro: "I worked as an accountant even when the GOSI sector reads construction.", submitted_at: liveAt, terms_accepted_at: liveAt },
     { person_id: pid("ret-huda"), state: "not_approved", application_step: 5, discipline_role: "English teacher", languages: ["English", "Arabic"], submitted_at: liveAt, terms_accepted_at: liveAt },
     { person_id: pid("ret-abdullah"), state: "active", application_step: 5, discipline_role: "Accountant", languages: ["Arabic", "English"], intro: "I help small businesses read their accounts.", submitted_at: liveAt, terms_accepted_at: liveAt, first_approved_at: liveAt, onboarding_watched_at: liveAt, readiness_passed_at: liveAt },
@@ -589,7 +592,13 @@ export async function seedDemo() {
     seen.add(`${row.retiree_id}:${row.starts_at}`);
     return key.length > 0;
   });
-  const { error: bookingError } = await db.from("bookings").insert(uniqueBookings);
+  const { error: bookingError } = await db.from("bookings").insert(
+    uniqueBookings.map((row) => ({
+      ...row,
+      late_cancel: row.late_cancel ?? false,
+      reminders_sent: row.reminders_sent ?? [],
+    })),
+  );
   if (bookingError) throw new Error(bookingError.message);
   const kept = new Set(uniqueBookings.map((row) => row.id));
   const { error: feedbackError } = await db.from("feedback").insert(feedback.filter((row) => kept.has(row.booking_id as string)));

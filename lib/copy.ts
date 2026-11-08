@@ -36,6 +36,8 @@ export const copy = {
   heldDef: "Held: paid, and not yet the retiree's. It can still be refunded.",
   releasedDef: "Released: the session is complete and the dispute window has passed. This belongs to the retiree.",
   paidOutDef: "Paid out: included in a monthly settlement to the pension bank account.",
+  dailyLimit: "Video calls are paused. This month's free Daily allowance of 10,000 participant-minutes is used.",
+  dailyUsageUnknown: "Video calls are paused because this month's Daily usage could not be checked.",
   script: [
     "Ops (Noura): create a wave of Riyadh English teachers, size cap 5, send. Fahad's phone shows the banner.",
     "Fahad: open the card, complete the 5-step application with a CV upload, submit.",

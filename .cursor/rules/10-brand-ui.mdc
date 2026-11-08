@@ -1,0 +1,42 @@
+---
+description: GOSI brand and UI rules for every screen
+globs: ["app/**", "components/**", "styles/**", "tailwind.config.*"]
+alwaysApply: false
+---
+
+# GOSI brand and UI
+
+Full rules: `brand/gosi-brand/SKILL.md`. Tokens: `brand/gosi-brand/references/tokens.css` (copy into `app/globals.css`) and `tokens.json` (map into `tailwind.config.ts` as `gosi.*` colors). Assets: copy `brand/gosi-brand/assets/` to `public/brand/`.
+
+## Colors (only these + their 80/50/25/10 tints)
+- Rich Blue `#00004E`: headings, body text, dark surfaces, table headers.
+- Vivid Green `#00BF00`: primary buttons, the arrow, success, progress.
+- Midnight `#00122D`; Midnight 10% `#E6E7EA` for the app background; Midnight 25% `#BFC4CB` borders; Midnight 50% `#808996` secondary text.
+- Blue `#0064FF`: links, accents, info chips, the "Active contribution"/"Monthly pension" tab.
+- Purple `#A37DFC`: sparingly, for announcement cards and "New" chips.
+- Small text on green must be Rich Blue, never white. No small white text on purple.
+
+## Typography
+`font-family: "Ping LT", "Ping AR", "Inter", "IBM Plex Sans Arabic", system-ui, sans-serif;` Load Inter + IBM Plex Sans Arabic from Google Fonts (Ping isn't licensed for the demo). Sentence case everywhere. Headings Rich Blue, medium/bold.
+
+## Components (shadcn/ui, themed)
+- Primary button: Vivid Green fill, Rich Blue label, fully rounded pill, height 52px on phone, optional trailing `›`.
+- Secondary: white fill with Rich Blue 25% border and Rich Blue label (like "My Certificates"), or Rich Blue fill with white label.
+- Cards: white, radius 24px on phone (16px desktop), no heavy shadows; subtle `0 1px 2px rgb(0 18 45 / 6%)`.
+- Round icon buttons on the phone header: 48px white circles.
+- Chips/status: Approved = Green 10% bg + Rich Blue text with green dot; Pending = Midnight 10% bg; Not approved = white with Rich Blue 25% border + reason text; Paused = Rich Blue 10%.
+- Tables (ops console): Rich Blue `#00004E` header row with white 13px semibold text, zebra rows `#F8F9FD`, row borders `#DBE2ED`. Same look as the PRD tables.
+- Section headings in the ops console: Rich Blue with a 1.5px Blue `#0064FF` underline for page titles (like the PRD H1), Blue for H2.
+- "Paid switch" tag: small amber chip (`#A04A00` text on `#FFF3E6`) wherever a paid-only feature appears in admin views.
+- Icons: official GOSI icons in `public/brand/icons/rich-blue|white/` where a concept exists (calendar, chat, certified-document, individuals, settings, security, financial-investment...). Otherwise `lucide-react` at 1.75 stroke, Rich Blue or Green.
+- Logo: use the master SVGs only (`gosi-wordmark-*` in headers, `gosi-logo-primary-reversed` on splash). Never redraw or recolor. The arrow SVG may be used large and cropped as a background device.
+- Empty states and onboarding: official illustrations in `public/brand/illustrations/`.
+
+## Phone app look (mimic `reference/super-app/*.png`)
+- Splash: Rich Blue full-bleed + logo. Welcome: Rich Blue with large tone-on-tone arrow (`#333371`).
+- Home: Midnight 10% background, white rounded cards, Rich Blue bold section titles (~22px), "View All →" links underlined with a green arrow, green line icons in service tiles, bottom tab bar (Home, Contributions, Help, Benefits, More) with a green dot under the active tab.
+- Promo cards: Rich Blue, white headline, green "Start now" pill with Rich Blue label.
+- GOSI Opportunities screens follow the same system: Midnight 10% page, white cards, Rich Blue headers, green primary CTAs.
+
+## Voice
+Warm, clear, reassuring, short sentences. Forward-looking ("Your next session", "You're live"). No jargon, no exclamation-heavy marketing.

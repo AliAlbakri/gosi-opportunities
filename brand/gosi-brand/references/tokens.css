@@ -1,0 +1,44 @@
+/* GOSI brand tokens - from GOSI Core Elements Guidelines, Dec 2024.
+   Tint hex values (80/50/25/10) are derived by mixing the official color with white. */
+:root {
+  /* Primary */
+  --gosi-rich-blue: #00004E;
+  --gosi-vivid-green: #00BF00;
+  --gosi-white: #FFFFFF;
+  --gosi-midnight: #00122D;
+
+  /* Rich Blue tints */
+  --gosi-rich-blue-80: #333371;
+  --gosi-rich-blue-50: #8080A7;
+  --gosi-rich-blue-25: #BFBFD3;
+  --gosi-rich-blue-10: #E6E6ED;
+
+  /* Vivid Green tints */
+  --gosi-green-80: #33CC33;
+  --gosi-green-50: #80DF80;
+  --gosi-green-25: #BFEFBF;
+  --gosi-green-10: #E6F9E6;
+
+  /* Midnight tints */
+  --gosi-midnight-80: #334157;
+  --gosi-midnight-50: #808996;
+  --gosi-midnight-25: #BFC4CB;
+  --gosi-midnight-10: #E6E7EA;
+
+  /* Secondary */
+  --gosi-blue: #0064FF;
+  --gosi-purple: #A37DFC;
+
+  /* Semantic roles */
+  --gosi-text: var(--gosi-rich-blue);
+  --gosi-text-muted: var(--gosi-midnight-50);
+  --gosi-bg: var(--gosi-white);
+  --gosi-bg-subtle: var(--gosi-midnight-10);
+  --gosi-border: var(--gosi-midnight-25);
+  --gosi-primary: var(--gosi-vivid-green);
+  --gosi-on-primary: var(--gosi-rich-blue); /* small text on green must be Rich Blue */
+  --gosi-link: var(--gosi-blue);
+
+  /* Typography - Ping is official; Inter / IBM Plex Sans Arabic are fallbacks */
+  --gosi-font: "Ping LT", "Ping AR", "Inter", "IBM Plex Sans Arabic", system-ui, sans-serif;
+}

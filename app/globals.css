@@ -1,0 +1,78 @@
+@import "tailwindcss" source(none);
+/* This folder is gitignored by .cursor/.gitignore, so automatic scanning finds nothing. Globs are required; a directory path is still ignored. */
+@source "./**/*.{tsx,ts}";
+@source "../components/**/*.{tsx,ts}";
+@source "../lib/**/*.{tsx,ts}";
+
+:root {
+  --gosi-rich-blue: #00004e;
+  --gosi-vivid-green: #00bf00;
+  --gosi-white: #ffffff;
+  --gosi-midnight: #00122d;
+  --gosi-rich-blue-80: #333371;
+  --gosi-rich-blue-50: #8080a7;
+  --gosi-rich-blue-25: #bfbfd3;
+  --gosi-rich-blue-10: #e6e6ed;
+  --gosi-green-80: #33cc33;
+  --gosi-green-50: #80df80;
+  --gosi-green-25: #bfefbf;
+  --gosi-green-10: #e6f9e6;
+  --gosi-midnight-80: #334157;
+  --gosi-midnight-50: #808996;
+  --gosi-midnight-25: #bfc4cb;
+  --gosi-midnight-10: #e6e7ea;
+  --gosi-blue: #0064ff;
+  --gosi-purple: #a37dfc;
+  --gosi-text: var(--gosi-rich-blue);
+  --gosi-text-muted: var(--gosi-midnight-50);
+  --gosi-bg: var(--gosi-white);
+  --gosi-bg-subtle: var(--gosi-midnight-10);
+  --gosi-border: var(--gosi-midnight-25);
+  --gosi-primary: var(--gosi-vivid-green);
+  --gosi-on-primary: var(--gosi-rich-blue);
+  --gosi-link: var(--gosi-blue);
+  --gosi-font: "Ping LT", "Ping AR", var(--font-inter), var(--font-plex), system-ui, sans-serif;
+  --background: var(--gosi-white);
+  --foreground: var(--gosi-rich-blue);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gosi-rich-blue: #00004e;
+  --color-gosi-rich-blue-80: #333371;
+  --color-gosi-rich-blue-50: #8080a7;
+  --color-gosi-rich-blue-25: #bfbfd3;
+  --color-gosi-rich-blue-10: #e6e6ed;
+  --color-gosi-vivid-green: #00bf00;
+  --color-gosi-green-80: #33cc33;
+  --color-gosi-green-50: #80df80;
+  --color-gosi-green-25: #bfefbf;
+  --color-gosi-green-10: #e6f9e6;
+  --color-gosi-white: #ffffff;
+  --color-gosi-midnight: #00122d;
+  --color-gosi-midnight-80: #334157;
+  --color-gosi-midnight-50: #808996;
+  --color-gosi-midnight-25: #bfc4cb;
+  --color-gosi-midnight-10: #e6e7ea;
+  --color-gosi-blue: #0064ff;
+  --color-gosi-purple: #a37dfc;
+  --color-gosi-amber-bg: #fff3e6;
+  --color-gosi-amber-text: #a04a00;
+  --color-gosi-zebra: #f8f9fd;
+  --color-gosi-row-border: #dbe2ed;
+  --font-sans: var(--gosi-font);
+}
+
+body {
+  background: var(--gosi-bg);
+  color: var(--gosi-text);
+  font-family: var(--gosi-font);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}

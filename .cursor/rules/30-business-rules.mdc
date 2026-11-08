@@ -1,0 +1,47 @@
+---
+description: Hard business rules (numbers and state machines) — check before writing domain logic
+globs: ["lib/domain/**", "app/**/actions.ts", "scripts/**"]
+alwaysApply: false
+---
+
+# Numbers (all in app time, Asia/Riyadh)
+| Rule | Value |
+|---|---|
+| Seeker minimum age | 18 |
+| Session length | exactly 1 hour, slots on the hour |
+| Booking window | ≥ 24 hours and ≤ 30 days ahead |
+| Availability hours | 06:00–23:00, whole hours, weekly windows |
+| Join allowed | from 10 min before start until end + 30 min |
+| No-show check | start + 15 min |
+| Cancellation | up to start; < 3 hours before = late (recorded against the canceller) |
+| Paid refund on any cancellation / no-show / pause / switch-off | 100% |
+| Payment slot hold | 10 minutes |
+| Dispute window | 48 hours after `completed_at` |
+| Release | `completed_at` + 48h if no open dispute |
+| Dispute decision target | 10 working days (Sun–Thu) |
+| Settlement | monthly, previous month's released amounts, to the pension bank account |
+| GOSI fee | 0 |
+| Description length (Service Type) | 80–800 chars |
+| Upload | PDF/JPG/PNG ≤ 10 MB |
+
+# Retiree profile state
+- draft → pending_review (submit, T&C required)
+- per Service Type: pending → approved | not_approved(reason code required)
+- profile = active if ≥1 approved; not_approved if none approved/none pending and ≥1 not approved; else pending_review
+- active ⇄ paused (ops only, reason required, cancels + refunds future bookings)
+- Self-pause = `accepting_bookings=false` (state stays active, confirmed bookings stay)
+- Listed in browse only if: state active AND accepting_bookings AND go-live checklist complete (video watched, readiness passed, ≥1 availability window) AND ≥1 approved Service Type
+
+# Booking status
+- free: → confirmed
+- paid: → pending_payment → confirmed (payment held) | expired (failure, timeout, closed)
+- confirmed → cancelled | no_show_retiree | no_show_seeker | completed
+
+# Payment status
+held → released → paid_out; held → refunded. Released and paid_out are never refunded. One dispute per booking. Dispute upheld → refunded + counts as a complaint; rejected → released (immediately if past 48h).
+
+# Paid switch
+- Off: no prices, payment screens, earnings tabs or paid filters anywhere in the phone.
+- On → off: cancel + refund all future paid bookings (incl. pending_payment), set every RST to free, notify. Completed-session money continues normally.
+- Band change: clamp out-of-band prices to the nearest limit, notify the retiree.
+- Only `/tech` changes these settings.

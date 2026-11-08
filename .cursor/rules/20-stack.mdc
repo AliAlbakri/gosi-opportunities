@@ -1,0 +1,45 @@
+---
+description: Stack, architecture and coding conventions
+alwaysApply: true
+---
+
+# Stack
+- Next.js 15 (App Router, Server Components, Server Actions), TypeScript strict, Tailwind CSS, shadcn/ui, lucide-react, date-fns + date-fns-tz (timezone **Asia/Riyadh** for all display and slot math), zod for every input.
+- Supabase: Postgres, Storage (private bucket `retiree-docs`), Realtime **Broadcast**, `pg_cron` + `pg_net` for the minute tick.
+- Daily.co: REST API (rooms, meeting tokens) server-side; `@daily-co/daily-js` call frame client-side.
+- Deploy on Vercel.
+
+# Architecture
+- **No auth.** Persona id comes from the URL (`/phone/[personaId]`, `/ops/[operatorId]`). Validate it exists server-side on every request.
+- **All DB access server-side** via `lib/supabase/admin.ts` (service role). Never import the service role key into client components. The browser uses the anon key **only** for Realtime Broadcast subscriptions.
+- Domain logic lives in `lib/domain/*` (pure TS + DB calls), one module per area: `invitations`, `applications`, `review`, `availability`, `bookings`, `sessions`, `feedback`, `reports`, `payments`, `settlement`, `settings`, `notifications`, `audit`, `clock`, `jobs`. Server Actions and route handlers are thin wrappers.
+- `lib/domain/clock.ts`: `getAppNow()` reads `app_settings.demo_clock_offset_seconds` (cache ≤ 2s). All rules use it.
+- `lib/domain/notifications.ts`: `notify(personaId, {title, body, link})` inserts the row and broadcasts on `persona:{id}`. Also `notifyOperators()`.
+- `lib/realtime.ts`: server broadcast helper; client hook `usePersonaChannel(personaId)` that shows the banner and calls `router.refresh()`; global channel `demo` for `clock.changed`, `settings.changed`, `data.reset`.
+- `lib/domain/jobs.ts`: `processDue()` exactly as DEMO-SPEC §9; idempotent; exposed at `POST /api/jobs/tick` (header `x-cron-secret`).
+- Multi-step state changes (e.g. pause retiree → cancel bookings → refund → notify) run in one function and must be safe to retry.
+- Use Postgres constraints as the last line of defence (the exclusion constraint prevents double booking; handle its error as "This slot was just taken").
+
+# Folder layout
+```
+app/
+  page.tsx                       # demo home
+  phone/[personaId]/...          # super-app shell + opportunities (seeker + retiree)
+  phone/page.tsx                 # splash → welcome → mock Nafath
+  ops/[operatorId]/...           # ops console
+  tech/page.tsx                  # tech config
+  api/jobs/tick/route.ts
+  api/sessions/[bookingId]/event/route.ts
+components/{phone,ops,shared,ui}/
+lib/{copy.ts,supabase,domain,realtime.ts,daily.ts,format.ts}
+scripts/seed.ts
+supabase/migrations/
+```
+
+# Conventions
+- Money: numeric SAR, display `SAR 150` (no decimals unless needed).
+- Dates in UI: `Tue 11 Nov, 18:00` (Riyadh). Relative times use app time.
+- IDs in URLs: personas use slugs; other entities use UUIDs.
+- Loading and empty states on every list. Optimistic UI is not needed; refresh after actions.
+- Keep components small; no file over ~300 lines.
+- Write a short `README.md` section for anything that needs a manual setup step.

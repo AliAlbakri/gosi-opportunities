@@ -37,6 +37,23 @@ select cron.schedule(
 );
 ```
 
-## Deploy
+## Deploy on Vercel
 
-Push the repo to GitHub, import it in Vercel, set the same environment variables, and set `NEXT_PUBLIC_APP_URL` to the Vercel URL. Then run the cron SQL above and use **Reset demo data** on the home page.
+The GitHub repo is [AliAlbakri/gosi-opportunities](https://github.com/AliAlbakri/gosi-opportunities). Import that repository in Vercel (Framework Preset: Next.js). Set these environment variables for Production before the first deploy. `NEXT_PUBLIC_*` values are baked in at build time, so change them and redeploy if the URL is wrong.
+
+| Name | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable key (`sb_publishable_...`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret key (`sb_secret_...`), server only |
+| `DAILY_API_KEY` | Daily.co API key |
+| `DAILY_DOMAIN` | Daily subdomain, such as `yourteam.daily.co` |
+| `CRON_SECRET` | Same long random string as local |
+| `NEXT_PUBLIC_APP_URL` | The Vercel URL, such as `https://your-app.vercel.app` |
+| `APP_TIMEZONE` | `Asia/Riyadh` |
+
+After the deployment is live:
+
+1. In the Supabase SQL editor, run `0001_init.sql` and `0002_application_step.sql` if the tables are not there yet. The private bucket `retiree-docs` should already exist.
+2. Enable `pg_cron` and `pg_net`, then run `supabase/cron.sql` with the Vercel URL and `CRON_SECRET`.
+3. Open the deployed site and choose **Reset demo data**.

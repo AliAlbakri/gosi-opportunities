@@ -77,10 +77,10 @@ export function Launcher({
 
 function PhoneColumn({ title, value, options, onChange }: { title: string; value: string; options: Option[]; onChange: (value: string) => void }) {
   return (
-    <section>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="font-medium text-gosi-rich-blue">{title}</h2>
-        <select className="h-10 max-w-[220px] rounded-xl border bg-white px-2 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+    <section className="flex flex-col items-center">
+      <div className="mb-2 flex w-[438px] max-w-full items-center justify-between gap-3">
+        <h2 className="shrink-0 font-medium text-gosi-rich-blue">{title}</h2>
+        <select className="h-10 w-[220px] max-w-[55%] rounded-xl border bg-white px-2 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
           {options.map((row) => (
             <option key={row.id} value={row.id}>{row.display_name}</option>
           ))}

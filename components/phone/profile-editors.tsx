@@ -22,9 +22,8 @@ export function Layer2Editor({
   return (
     <div className="space-y-2 rounded-3xl bg-white p-4">
       <h2 className="text-gosi-blue">Edit what you declared</h2>
-      <Field label="Professional discipline and role"><TextInput value={form.discipline} onChange={(e) => setForm({ ...form, discipline: e.target.value })} /></Field>
-      <Field label="Specializations"><TextArea value={form.specializations} onChange={(e) => setForm({ ...form, specializations: e.target.value })} /></Field>
-      <Field label="Personal introduction"><TextArea value={form.intro} onChange={(e) => setForm({ ...form, intro: e.target.value })} /></Field>
+      <Field label="What was your job?"><TextInput value={form.discipline} onChange={(e) => setForm({ ...form, discipline: e.target.value })} /></Field>
+      <Field label="A short introduction"><TextArea value={form.intro} onChange={(e) => setForm({ ...form, intro: e.target.value })} /></Field>
       <div className="flex flex-wrap gap-2">
         {LANGUAGES.map((language) => {
           const on = form.languages.includes(language);

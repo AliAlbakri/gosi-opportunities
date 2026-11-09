@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { audit } from "@/lib/domain/audit";
 import { jumpToMonthEnd, jumpToNextBooking, resetClock, shiftClock } from "@/lib/domain/demo-clock";
 import { notify } from "@/lib/domain/notifications";
 import { parsed } from "@/lib/parse";
@@ -39,8 +40,9 @@ export async function jumpBookingAction() {
   return result;
 }
 
-export async function resetDataAction() {
+export async function resetDataAction(actor = "system") {
   await seedDemo();
+  await audit(actor, "demo.reset", "app_settings", "1");
   await broadcast("demo", "data.reset", {});
   done();
   return { ok: true as const };

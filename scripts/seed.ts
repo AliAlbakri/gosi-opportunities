@@ -492,7 +492,7 @@ export async function seedDemo() {
       helped: true,
       tags: ["clear explanation", "strong knowledge"],
       review_text: review,
-      review_status: i === 0 || i === 4 ? "pending" : "approved",
+      review_status: "approved",
       created_at: new Date(starts.getTime() + 3700000).toISOString(),
     });
   }

@@ -8,7 +8,8 @@ import { getAppNow } from "@/lib/domain/clock";
 import { publicProfile } from "@/lib/domain/discovery";
 import { requireUser } from "@/lib/domain/personas";
 import { yearsOfEmployment } from "@/lib/domain/rules";
-import { countLabel, formatSpan, money, relativeDay } from "@/lib/format";
+import { seekerJobLine } from "@/components/phone/profile-preview";
+import { countLabel, money, relativeDay } from "@/lib/format";
 import { serviceIcons } from "@/lib/phone-icons";
 import { BrandIcon } from "@/components/phone/brand-icon";
 
@@ -61,14 +62,19 @@ export default async function ProfilePage({ params }: { params: Promise<{ person
           <div className="mb-3 flex items-center gap-2 rounded-2xl bg-gosi-rich-blue px-3 py-2 text-white"><BrandIcon name="security" tone="white" className="h-5 w-5" /> Verified by GOSI</div>
           <p>Status · Confirmed retiree</p>
           <p>Experience · {years} years</p>
-          {profile.profile.show_employers && profile.jobs.filter((job) => job.employer && job.employer !== "Earlier employer").map((job) => (
-            <p key={job.id} className="mt-2">{job.employer}{profile.profile.show_sector ? ` · ${job.sector}` : ""}{profile.profile.show_dates ? ` · ${formatSpan(job.start_date, job.end_date)}` : ""}</p>
-          ))}
+          {profile.jobs.map((job) => {
+            const line = seekerJobLine(job, { employers: profile.profile.show_employers, dates: profile.profile.show_dates, sector: profile.profile.show_sector });
+            return line ? <p key={job.id} className="mt-2">{line}</p> : null;
+          })}
         </Card>
         <Card>
           <div className="mb-3 rounded-2xl bg-gosi-midnight-10 px-3 py-2 text-[13px] font-semibold">Self-declared, reviewed by GOSI</div>
           <p>Role · {profile.profile.discipline_role}</p>
-          <p>Specializations · {profile.profile.specializations}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {profile.services.map((service) => (
+              <span key={service.id} className="rounded-full bg-gosi-midnight-10 px-3 py-1 text-[13px]">{service.serviceType?.name}</span>
+            ))}
+          </div>
           <p className="mt-2 text-[15px]">{profile.profile.intro}</p>
           <p className="mt-2 text-[13px]">{copy.docsProvided}</p>
         </Card>

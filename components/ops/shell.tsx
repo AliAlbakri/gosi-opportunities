@@ -1,7 +1,4 @@
 import Link from "next/link";
-import { DemoControls } from "@/components/demo/controls";
-import { getAppNow } from "@/lib/domain/clock";
-import { nextBookingLabel } from "@/lib/domain/demo-clock";
 
 const links = [
   ["Overview", ""],
@@ -9,13 +6,11 @@ const links = [
   ["Review queue", "/review"],
   ["Retirees", "/retirees"],
   ["Reports and disputes", "/reports"],
-  ["Review moderation", "/moderation"],
   ["Settlement", "/settlement"],
   ["Audit log", "/audit"],
 ];
 
-export async function OpsShell({ operatorId, name, children }: { operatorId: string; name: string; children: React.ReactNode }) {
-  const [appNow, next] = await Promise.all([getAppNow(), nextBookingLabel()]);
+export function OpsShell({ operatorId, name, children }: { operatorId: string; name: string; children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-gosi-midnight-10 text-gosi-rich-blue">
       <div className="grid min-h-dvh md:grid-cols-[240px_1fr]">
@@ -27,10 +22,10 @@ export async function OpsShell({ operatorId, name, children }: { operatorId: str
               <Link key={label} className="block rounded-xl px-2 py-2 hover:bg-gosi-midnight-10" href={`/ops/${operatorId}${href}`}>{label}</Link>
             ))}
           </nav>
+          <a className="mt-6 block rounded-xl px-2 py-2 text-sm text-gosi-blue hover:bg-gosi-midnight-10" href="/clock">Demo clock</a>
         </aside>
         <div className="p-6">{children}</div>
       </div>
-      <DemoControls appNow={appNow.toISOString()} realNow={new Date().toISOString()} nextLabel={next ? `${next.seeker} with ${next.retiree}` : null} />
     </div>
   );
 }

@@ -22,9 +22,10 @@ export default async function ApplyPage({ params }: { params: Promise<{ personaI
         name: bundle.person.full_name,
         pension: bundle.person.pension_system ?? "retiree",
         years: bundle.years,
-        employers: bundle.jobs.map((job) => `${job.employer} · ${job.sector}`).join(", "),
         lastActive: bundle.jobs.reduce((year, job) => Math.max(year, Number((job.end_date ?? job.start_date).slice(0, 4))), 0).toString(),
       }}
+      jobs={bundle.jobs.map((job) => ({ id: job.id, employer: job.employer, sector: job.sector, start_date: job.start_date, end_date: job.end_date }))}
+      documents={bundle.documents.map((doc) => ({ id: doc.id, kind: doc.kind, file_name: doc.file_name }))}
       initial={{
         showEmployers: bundle.profile?.show_employers ?? true,
         showDates: bundle.profile?.show_dates ?? true,

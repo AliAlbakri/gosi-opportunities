@@ -1,9 +1,7 @@
-import { DemoControls } from "@/components/demo/controls";
 import { Launcher } from "@/components/demo/launcher";
 import { SchemaScreen, SetupScreen } from "@/components/setup-screen";
 import { copy } from "@/lib/copy";
 import { getAppNow } from "@/lib/domain/clock";
-import { nextBookingLabel } from "@/lib/domain/demo-clock";
 import { processDueLazy } from "@/lib/domain/jobs";
 import { listPersonas } from "@/lib/domain/personas";
 import { getSettings } from "@/lib/domain/settings";
@@ -16,12 +14,7 @@ export default async function HomePage() {
   if (!hasSupabaseEnv()) return <SetupScreen />;
   if (!(await databaseReady())) return <SchemaScreen />;
   await processDueLazy();
-  const [personas, settings, appNow, next] = await Promise.all([
-    listPersonas(),
-    getSettings(),
-    getAppNow(),
-    nextBookingLabel(),
-  ]);
+  const [personas, settings, appNow] = await Promise.all([listPersonas(), getSettings(), getAppNow()]);
   const users = personas.filter((row) => row.kind === "gosi_user");
   const retirees = users.filter((row) => row.id.startsWith("ret-"));
   const seekers = users.filter((row) => row.id.startsWith("seek-"));
@@ -40,11 +33,6 @@ export default async function HomePage() {
         </span>
       </header>
       <Launcher retirees={retirees} seekers={seekers} operators={personas.filter((row) => row.kind === "operator")} />
-      <DemoControls
-        appNow={appNow.toISOString()}
-        realNow={new Date().toISOString()}
-        nextLabel={next ? `${next.seeker} with ${next.retiree}` : null}
-      />
     </main>
   );
 }

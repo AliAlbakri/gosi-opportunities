@@ -16,6 +16,7 @@ import { saveTechSettings } from "@/lib/domain/settings";
 import { runSettlement } from "@/lib/domain/settlement";
 import { testCall } from "@/lib/domain/sessions";
 import { joinSession } from "@/lib/domain/sessions";
+import { copy } from "@/lib/copy";
 import { parsed } from "@/lib/parse";
 import { LANGUAGES, REPORT_REASONS } from "@/lib/types";
 
@@ -34,9 +35,9 @@ const waveSchema = z.object({
 });
 
 export async function previewWaveAction(input: unknown) {
-  const parsedInput = parsed(waveSchema.omit({ operatorId: true, name: true, sizeCap: true }), input);
+  const parsedInput = parsed(waveSchema.omit({ operatorId: true, name: true }), input);
   if (!parsedInput.ok) return parsedInput;
-  const preview = await previewWave(parsedInput.data);
+  const preview = await previewWave(parsedInput.data, parsedInput.data.sizeCap);
   return { ok: true as const, preview };
 }
 
@@ -49,6 +50,7 @@ export async function sendWaveAction(input: unknown) {
     operatorId: parsedInput.data.operatorId,
     filters: parsedInput.data,
   });
+  if (!result.sent) return { ok: false as const, error: copy.waveNone };
   done();
   return { ok: true as const, sent: result.sent };
 }
@@ -284,13 +286,6 @@ export async function disputeAction(input: unknown) {
 
 export async function closeComplaintAction(operatorId: string, reportId: string, note: string) {
   const result = await closeComplaint(operatorId, reportId, note);
-  done();
-  return result;
-}
-
-export async function moderateAction(operatorId: string, bookingId: string, decision: "approved" | "rejected") {
-  const { moderateReview } = await import("@/lib/domain/feedback");
-  const result = await moderateReview(operatorId, bookingId, decision);
   done();
   return result;
 }

@@ -125,11 +125,20 @@ export async function saveApplication(
   }
 }
 
+const fileTypes: Record<string, string> = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+};
+
 export async function uploadDocument(personId: string, kind: "cv" | "certificate", file: File) {
   await ensureDraft(personId);
+  if (!file || file.size === 0) return { ok: false as const, error: "Choose a file." };
   if (file.size > 10 * 1024 * 1024) return { ok: false as const, error: "Files must be 10 MB or smaller." };
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
-  if (!allowed.includes(file.type)) return { ok: false as const, error: "Upload a PDF, JPG, or PNG file." };
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const contentType = fileTypes[extension] ?? (file.type === "image/jpg" ? "image/jpeg" : file.type);
+  if (!Object.values(fileTypes).includes(contentType)) return { ok: false as const, error: "Upload a PDF, JPG, or PNG file." };
   if (kind === "cv") {
     const docs = await getDocuments(personId);
     const previous = docs.filter((doc) => doc.kind === "cv");
@@ -142,7 +151,7 @@ export async function uploadDocument(personId: string, kind: "cv" | "certificate
   const path = `${personId}/${kind}/${crypto.randomUUID()}-${safeName}`;
   const bytes = Buffer.from(await file.arrayBuffer());
   const { error: upError } = await admin().storage.from("retiree-docs").upload(path, bytes, {
-    contentType: file.type,
+    contentType,
     upsert: false,
   });
   if (upError) return { ok: false as const, error: upError.message };
@@ -166,9 +175,30 @@ export async function removeDocument(personId: string, documentId: string) {
 }
 
 export async function signedDocumentUrl(path: string) {
-  const { data, error } = await admin().storage.from("retiree-docs").createSignedUrl(path, 60 * 10);
+  const { data, error } = await admin().storage.from("retiree-docs").createSignedUrl(path, 60 * 60);
   if (error) throw new Error(error.message);
   return data.signedUrl;
+}
+
+export async function operatorDocuments(personId: string) {
+  const documents = await getDocuments(personId);
+  return Promise.all(
+    documents.map(async (doc) => {
+      let url = "";
+      try {
+        url = await signedDocumentUrl(doc.file_path);
+      } catch {
+        url = "";
+      }
+      return {
+        id: doc.id as string,
+        kind: doc.kind as "cv" | "certificate",
+        file_name: doc.file_name as string,
+        uploaded_at: doc.uploaded_at as string,
+        url,
+      };
+    }),
+  );
 }
 
 export async function submitApplication(personId: string, personaId: string) {

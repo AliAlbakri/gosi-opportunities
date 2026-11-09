@@ -118,7 +118,7 @@ export async function publicProfile(personId: string) {
   const seekerName = new Map((seekers ?? []).map((row) => [row.id, row.first_name]));
   const bookingSeeker = new Map((completed ?? []).map((row) => [row.id, row]));
   const reviews = (feedback ?? [])
-    .filter((row) => row.review_status === "approved" && row.review_text)
+    .filter((row) => row.review_status !== "rejected" && row.review_text)
     .map((row) => ({
       text: row.review_text as string,
       firstName: seekerName.get(bookingSeeker.get(row.booking_id)?.seeker_id ?? "") ?? "Seeker",

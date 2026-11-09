@@ -38,6 +38,7 @@ export function Launcher({
         </label>
         <a className="block text-gosi-blue" href={`/ops/${operator}`} target="_blank" rel="noreferrer">Open ops console</a>
         <a className="block text-gosi-blue" href="/tech" target="_blank" rel="noreferrer">Open tech config</a>
+        <a className="block text-gosi-blue" href="/clock" target="_blank" rel="noreferrer">{copy.clockOpen}</a>
         <a className="block text-gosi-blue" href={`/phone/${retiree}/home`} target="_blank" rel="noreferrer">Open retiree phone</a>
         <a className="block text-gosi-blue" href={`/phone/${seeker}/home`} target="_blank" rel="noreferrer">Open seeker phone</a>
         <button

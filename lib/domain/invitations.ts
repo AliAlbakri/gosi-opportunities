@@ -4,7 +4,7 @@ import { notifyPerson } from "@/lib/domain/notifications";
 import { employmentFor, getPersonByNationalId } from "@/lib/domain/personas";
 import { yearsOfEmployment } from "@/lib/domain/rules";
 import { admin } from "@/lib/supabase/admin";
-import type { GosiPerson, WaveFilters } from "@/lib/types";
+import type { GosiPerson, WaveFilters, WavePreview, WaveStep } from "@/lib/types";
 
 type Candidate = GosiPerson & { years: number; sector: string };
 
@@ -46,13 +46,52 @@ export function matchFilters(person: Candidate, filters: WaveFilters) {
   return true;
 }
 
-export async function previewWave(filters: WaveFilters) {
+export async function previewWave(filters: WaveFilters, sizeCap: number) {
   const appNow = await getAppNow();
-  const matches = (await retireePool(appNow)).filter((person) => matchFilters(person, filters));
-  matches.sort((a, b) => a.full_name.localeCompare(b.full_name));
-  const breakdown: Record<string, number> = {};
-  for (const person of matches) breakdown[person.sector] = (breakdown[person.sector] ?? 0) + 1;
-  return { count: matches.length, breakdown, sample: matches.slice(0, 8).map((p) => p.full_name) };
+  let current = await retireePool(appNow);
+  const steps: WaveStep[] = [{ kind: "pool", count: current.length }];
+  let alternatives: { label: string; count: number }[] = [];
+  type FilterStep =
+    | { kind: "region"; value: string }
+    | { kind: "sector"; value: string }
+    | { kind: "pension"; value: string }
+    | { kind: "years"; value: number };
+  const narrow = (step: FilterStep, next: Candidate[], labelOf: (person: Candidate) => string) => {
+    if (next.length === 0 && current.length > 0 && alternatives.length === 0) {
+      const counts = new Map<string, number>();
+      for (const person of current) counts.set(labelOf(person), (counts.get(labelOf(person)) ?? 0) + 1);
+      alternatives = [...counts.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    }
+    current = next;
+    steps.push({ ...step, count: current.length });
+  };
+  if (filters.regions.length) {
+    narrow({ kind: "region", value: filters.regions.join(", ") }, current.filter((person) => filters.regions.includes(person.region ?? "")), (person) => person.region ?? "Unknown");
+  }
+  if (filters.sectors.length) {
+    narrow({ kind: "sector", value: filters.sectors.join(", ") }, current.filter((person) => filters.sectors.includes(person.sector)), (person) => person.sector);
+  }
+  if (filters.pensionSystems.length) {
+    narrow({ kind: "pension", value: filters.pensionSystems.join(", ") }, current.filter((person) => filters.pensionSystems.includes(person.pension_system!)), (person) => person.pension_system ?? "Unknown");
+  }
+  if (filters.minYears > 0) {
+    narrow({ kind: "years", value: filters.minYears }, current.filter((person) => person.years >= filters.minYears), (person) => `${Math.floor(person.years)} years`);
+  }
+  current.sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const chosen = current.slice(0, Math.max(0, sizeCap));
+  return {
+    count: current.length,
+    willInvite: chosen.length,
+    steps,
+    alternatives,
+    people: chosen.map((person) => ({
+      name: person.full_name,
+      region: person.region ?? "",
+      sector: person.sector,
+      pension: person.pension_system ?? "",
+      years: Math.round(person.years),
+    })),
+  } satisfies WavePreview;
 }
 
 export async function sendWave(input: { name: string; filters: WaveFilters; sizeCap: number; operatorId: string }) {
@@ -61,6 +100,7 @@ export async function sendWave(input: { name: string; filters: WaveFilters; size
     .filter((person) => matchFilters(person, input.filters))
     .sort((a, b) => a.full_name.localeCompare(b.full_name))
     .slice(0, input.sizeCap);
+  if (!matches.length) return { sent: 0 };
   const { data: wave, error } = await admin()
     .from("invitation_waves")
     .insert({

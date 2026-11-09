@@ -2,7 +2,7 @@
 
 This file turns `PRD.md` into a working, end-to-end demo. Read the PRD for *what* the product does and why. Read this file for *how the demo is built*. Where they disagree, this file wins for the demo.
 
-**Goal:** every journey in the PRD works for real, with real data written to Supabase, in a demo you can run live in one meeting. **Only payment is mocked** (a fake PSP that writes a real ledger). Login is mocked (persona picker styled as Nafath). Everything else is functional: invitations, applications, uploads, review, availability, booking, real video calls, cancellations, no-shows, feedback, moderation, monitoring, pausing, paid sessions, disputes, release and monthly settlement.
+**Goal:** every journey in the PRD works for real, with real data written to Supabase, in a demo you can run live in one meeting. **Only payment is mocked** (a fake PSP that writes a real ledger). Login is mocked (persona picker styled as Nafath). Everything else is functional: invitations, applications, uploads, review, availability, booking, real video calls, cancellations, no-shows, feedback, monitoring, pausing, paid sessions, disputes, release and monthly settlement.
 
 **Language:** English only, LTR. (Keep strings in one `lib/copy.ts` so Arabic can be added later. Arabic Category and Service Type names are shown as secondary labels where the PRD shows them.)
 
@@ -16,7 +16,7 @@ This file turns `PRD.md` into a working, end-to-end demo. Read the PRD for *what
 | Phone: GOSI super-app | `/phone/[personaId]/...` | 390 × 844 iPhone frame, centred | Any GOSI user persona (retiree and/or seeker) |
 | Ops console | `/ops/[operatorId]/...` | Desktop, sidebar layout | Operator personas (business owner team) |
 | Tech config | `/tech` | Desktop, single page | Tech team (not in ops console) |
-| Demo controls | floating panel on `/`, `/ops/*`, `/tech` | — | Presenter |
+| Demo clock | `/clock` | Desktop | Presenter |
 
 **Persona lives in the URL, not a cookie**, so several personas can be open side by side in one browser (tabs or iframes). There is no real auth. All DB access is server-side with the service role key.
 
@@ -25,10 +25,11 @@ This file turns `PRD.md` into a working, end-to-end demo. Read the PRD for *what
 - Three columns:
   1. **Retiree phone**: persona dropdown (retiree personas) + embedded iframe of `/phone/[id]`.
   2. **Seeker phone**: persona dropdown (seeker personas) + embedded iframe.
-  3. **Shortcuts**: open Ops console (operator dropdown), open Tech config, open each phone in a new tab, "Reset demo data" (re-runs seed, confirm dialog), short demo script checklist (section 12).
+  3. **Shortcuts**: open Ops console (operator dropdown), open Tech config, open Demo clock, open each phone in a new tab, "Reset demo data" (re-runs seed, confirm dialog), short demo script checklist (section 12).
 - Iframes and tabs update live (Realtime broadcast), so an action in one view shows in the others without refresh.
 
-### 1.2 Demo controls (floating panel, bottom-right)
+### 1.2 Demo clock `/clock`
+A dedicated presenter page, linked from the demo home shortcuts, the ops sidebar, and tech config. It does not overlay other screens.
 - App time and real time.
 - Buttons: **+1 hour**, **+3 hours**, **+1 day**, **+48 hours**, **Jump to next booking start** (sets clock to 5 min before the next confirmed booking), **Jump to month end** (sets clock to 23:55 on the last day of the current app month), **Reset clock to real time**.
 - After any clock change: run the job processor (section 9) immediately, then broadcast `clock.changed` to all clients.
@@ -102,10 +103,10 @@ Routes under `/phone/[id]/opportunities/retiree/...`. Header: back chevron, titl
 
 ### 4.1 Application (stages 1–4)
 A 5-step wizard with a step indicator, autosaved as **Draft** (`retiree_profiles.state = draft`) after every field change. Leaving and returning resumes at the last step.
-1. **Your GOSI record** (Layer 1, read-only): name, confirmed retiree status, pension system, years of experience (sum of employment), year last active, list of employers with dates and sector. Toggles: "Show employers", "Show dates", "Show sector" on my public profile. Badge "Verified by GOSI".
-2. **Your professional background** (Layer 2, self-declared): Professional discipline and role (text, required), Specializations (multi-line, optional), Personal introduction (multi-line, optional), Languages offered (multi-select chips, fixed list: Arabic, English, French, Urdu, Hindi, Filipino, Bengali, Indonesian, Turkish, Spanish, at least one required). Label "Self-declared, reviewed by GOSI before publishing".
+1. **Your GOSI record** (Layer 1, read-only): name, confirmed retiree status, pension system, years of experience (sum of employment), year last active, and each employer with its dates and sector, each on its own line. A short note says the name, retiree status, years, and year last active are always public. Toggles, each with a one-line explanation: "Show employers" (workplace names), "Show dates" (years at each place), "Show sector" (the GOSI sector). A live "What seekers will see" card updates as the toggles change. The review step repeats that card plus the role, introduction, languages, and Service Types. Badge "Verified by GOSI".
+2. **Your professional background** (Layer 2, self-declared): "What was your job?" (required) and "A short introduction" (optional). No free-text specializations field. Placeholders show an example. Two buttons, Teacher and Accountant, fill the empty fields so the retiree can edit them. Languages: Arabic and English first, the rest behind "More languages"; at least one required.
 3. **Documents**: upload certificates (multiple) and CV (one), PDF/JPG/PNG up to 10 MB, Supabase Storage bucket `retiree-docs` (private, server signed URLs for viewing). Optional.
-4. **What you'll offer**: pick a Category, then one or more Service Types (fixed list from DB; no free text names). For each selected Service Type: required description (min 80 chars, max 800) with the PRD example as placeholder. Can add Service Types from both Categories.
+4. **What you'll offer**: the Service Type list is the specialization. Pick a Category, then one or more Service Types (fixed list from DB; the retiree never types the name). Seekers see those names as chips. For each selected Service Type: required description (min 80 chars, max 800) with the PRD example as placeholder. The description is the only free text, and an operator reads it before it is published. Can add Service Types from both Categories.
 5. **Review and submit**: summary of everything, T&C sheet ("I agree to the GOSI Opportunities terms and conditions", scrollable placeholder T&C text; checkbox required), **Submit for review**.
 
 On submit: `state = pending_review`, every RST `status = pending`, `terms_accepted_at`, `submitted_at`, audit log, notifications (retiree: "Application submitted"; all operators: "New application to review").
@@ -148,8 +149,8 @@ Routes under `/phone/[id]/opportunities/...`.
 ### 5.2 Retiree profile
 Two clearly separated blocks:
 - **Verified by GOSI** (Rich Blue header with check icon): name, confirmed retiree, years of professional experience, year last active, and only the employers/dates/sector the retiree chose to show.
-- **Self-declared by the retiree** (grey header): discipline and role, specializations, languages, introduction, certificates/CV listed as "Documents provided (reviewed by GOSI)" (names only, not downloadable by seekers).
-- Ratings: aggregate + approved written reviews (first name of reviewer + month).
+- **Self-declared by the retiree** (grey header): discipline and role, approved Service Type names as chips (these are the specializations), languages, introduction, certificates/CV listed as "Documents provided (reviewed by GOSI)" (names only, not downloadable by seekers).
+- Ratings: aggregate + written reviews (first name of reviewer + month). A written review is published when the seeker submits it.
 - Approved Service Types offered, each with description and price.
 - Disclaimer (always): "Sessions are guidance based on professional experience, not a licensed professional service."
 
@@ -165,7 +166,7 @@ Two clearly separated blocks:
 Upcoming / Past. Upcoming card: retiree, date/time, Service Type, Free/Paid, **Join** (active from 10 min before), **Cancel**. Past: status, **Rate session** (if completed and not yet rated), **Report a problem**, **Book again**.
 
 ### 5.5 Feedback (stage 9)
-After a completed session, the seeker gets a prompt (screen shown right after leaving the call, plus a notification). Fields: rating 1–5 (required), "Did this session help with what you needed?" Yes/No, tags (multi: clear explanation, strong knowledge, well prepared, unclear, limited knowledge, unprepared, off-topic, unprofessional), optional written review (`review_status = pending` → ops moderation before it shows on the profile).
+After a completed session, the seeker gets a prompt (screen shown right after leaving the call, plus a notification). Fields: rating 1–5 (required), "Did this session help with what you needed?" Yes/No, tags (multi: clear explanation, strong knowledge, well prepared, unclear, limited knowledge, unprepared, off-topic, unprofessional), optional written review. The text is published on the retiree profile as soon as it is submitted.
 
 ### 5.6 Report a problem / dispute
 From a past booking or the session-end screen. Reason list (radio) + description (required).
@@ -238,23 +239,23 @@ Totals for Held, Released, Paid out (with a one-line definition each from the PR
 
 ## 8. Ops console `/ops/[operatorId]`
 
-Desktop layout: left sidebar (GOSI wordmark, operator name), white content area, Rich Blue table headers like the PRD tables. Sidebar items: Overview, Invitations, Review queue, Retirees, Reports and disputes, Review moderation, Settlement, Audit log.
+Desktop layout: left sidebar (GOSI wordmark, operator name), white content area, Rich Blue table headers like the PRD tables. Sidebar items: Overview, Invitations, Review queue, Retirees, Reports and disputes, Settlement, Audit log.
 
-1. **Overview**: counts (invited, drafts, pending review, active, paused, upcoming sessions, open disputes with overdue count), and the latest audit entries.
+1. **Overview**: counts (invited, drafts, pending review, active, paused, upcoming sessions, open disputes with overdue count).
 2. **Invitations**
-   - **New wave**: filters over `gosi_people` where `is_retiree`: pension system (multi), sector (multi, from employment), min years of contribution, region (multi). Shows live candidate count and a breakdown by sector; candidates already invited are excluded automatically. Set wave name and **size cap** (manual number). **Confirm and send** → creates invitations (up to cap), notifications to each retiree ("You're invited to GOSI Opportunities"), audit.
+   - **Reset demo data**: confirm, then re-run the seed. Waves, applications, bookings, and the clock return to the start. Fahad is not invited. Same action as the demo home.
+   - **New wave**: four steps on the page (name and size cap, filters, check the count, send). Filters over `gosi_people` where `is_retiree`: pension system, sector (from employment), min years of contribution, region. The count updates as the filters change and shows how many people each filter removes. Candidates already invited are excluded. **Combined** is the pension system for someone who contributed to both public and private systems. **Confirm and send** invites up to the size cap and notifies each retiree ("You're invited to GOSI Opportunities"). A filter set that matches nobody does not create a wave.
    - **Manual invite**: enter a National ID → shows the GOSI record (must be a retiree, not already invited) → Invite.
    - **Waves table** (funnel per wave): invited, opened, started application, submitted, approved, delivered first session.
-3. **Review queue**: pending applications (oldest first). Detail page shows Layer 1 record (employment history with sectors), Layer 2 fields, documents (open via signed URL), and each pending Service Type with its description. Per Service Type: **Approve** or **Not approve** with a reason code (required) + note (optional). Reason codes: `NOT_MATCHING` "Description doesn't match the Service Type", `INSUFFICIENT_EVIDENCE` "Not enough evidence of this role or experience", `DOCS_UNCLEAR` "Documents unclear or not relevant", `CONTENT_ISSUE` "Content not appropriate for publishing", `OTHER` "Other". Operator can also edit nothing on the retiree's behalf. On decision: update states (4.2), notify retiree, audit.
+3. **Review queue**: pending applications (oldest first). Detail page shows Layer 1 record (employment history with sectors), Layer 2 fields, a Documents section (CV and certificates, image preview, open via signed URL; an empty state when none were uploaded), and each pending Service Type with its description. The same Documents section is on the retiree detail page. Per Service Type: **Approve** or **Not approve** with a reason code (required) + note (optional). Reason codes: `NOT_MATCHING` "Description doesn't match the Service Type", `INSUFFICIENT_EVIDENCE` "Not enough evidence of this role or experience", `DOCS_UNCLEAR` "Documents unclear or not relevant", `CONTENT_ISSUE` "Content not appropriate for publishing", `OTHER` "Other". Operator can also edit nothing on the retiree's behalf. On decision: update states (4.2), notify retiree, audit.
 4. **Retirees** (Stage 10 monitoring list): columns exactly as PRD: name, mobile number, status (Active/Paused), approved Service Types, date approved, sessions delivered, aggregate rating, missed sessions, late cancellations, complaints (incl. upheld disputes), date of last session; plus Disputes and Earnings (held/released/paid out) when paid is on. Sort and filter. Row → detail with history (notes sent, status changes) and actions:
    - **Send a note** (template picker: `WELCOME_TIPS`, `LOW_RATING`, `MISSED_SESSION`, `LATE_CANCELLATIONS`, `COMPLAINT_RECEIVED`, `GENERAL`; editable body) → ops_notes + notification.
    - **Pause** (reason required) → state `paused`, listings hidden, future bookings cancelled and refunded, seekers notified, retiree notified. Retiree keeps full access to the rest of the GOSI app.
    - **Restore** → back to `active`.
    - No ID number shown anywhere in ops (mobile only).
 5. **Reports and disputes**: tabs Complaints | Disputes. Dispute detail shows the evidence panel: booking, price, call join/leave timeline for both parties with durations, seeker's pre-session need and goal, rating and tags, the report. Actions: **Refund in full** (upheld, payment `refunded`, counts as a complaint against the retiree) or **Reject** (payment becomes `released` immediately if past the 48h window, otherwise at the normal release time). Decision note required. Shows due date and an "Overdue" badge after 10 working days. Retiree input is not requested. Complaints: **Close** with note.
-6. **Review moderation**: pending written reviews → Approve / Reject.
-7. **Settlement**: released-but-unpaid by retiree, **Run settlement** button, past payouts, CSV download.
-8. **Audit log**: every operator, system and tech action with actor, action, entity, timestamp (app time), details.
+6. **Settlement**: released-but-unpaid by retiree, **Run settlement** button, past payouts, CSV download.
+7. **Audit log**: every operator, system and tech action with actor, action, entity, timestamp (app time), details.
 
 ---
 
@@ -320,7 +321,7 @@ Wipes all tables except taxonomy and re-creates. Use realistic Saudi names. Time
   - 6 more active retirees across Service Types, so browse feels full; Nasser is fully booked for 30 days, and Khaled (`ret-extra-5`) is invited with the go-live checklist still open.
   - ~25 retirees not invited (wave candidates).
 - **Seeker personas:** `seek-sara` (employee, 29), `seek-james` (non-Arabic-speaking resident, 41, wants Arabic), `seek-omar` (small restaurant owner, 35, wants VAT guidance), `seek-reem` (22), `seek-teen` (Yazan, 16, blocked).
-  - **History:** one past wave ("Wave 1 · Riyadh teachers", 13 invited, including Khaled whose go-live checklist is incomplete) with funnel numbers; ~40 past completed sessions with a unique written review each (two pending moderation); upcoming confirmed bookings for `seek-sara` and `seek-omar` (one starting within 2 days); Nasser fully booked for 30 days; a no-show; a late cancellation; ops notes; audit history.
+  - **History:** one past wave ("Wave 1 · Riyadh teachers", 13 invited, including Khaled whose go-live checklist is incomplete) with funnel numbers; ~40 past completed sessions with a unique written review each, published on the profile; upcoming confirmed bookings for `seek-sara` and `seek-omar` (one starting within 2 days); Nasser fully booked for 30 days; a no-show; a late cancellation; ops notes; audit history.
 - **Paid history (pre-existing, even though the switch starts off):** a few historical paid sessions in each money state (released, paid out with a past payout, refunded) and one **open dispute** due in 6 working days, so ops screens are populated. (They were created during a past period when the switch was on; label in audit log.)
 - Every persona's `blurb` describes their state for the Nafath picker and demo home.
 

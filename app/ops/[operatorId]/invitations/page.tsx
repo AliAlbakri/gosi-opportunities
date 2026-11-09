@@ -1,4 +1,6 @@
 import { InvitationsPanel } from "@/components/ops/invitations-panel";
+import { ResetDemo } from "@/components/ops/reset-demo";
+import { copy } from "@/lib/copy";
 import { filterOptions, listWaves } from "@/lib/domain/invitations";
 
 export default async function InvitationsPage({ params }: { params: Promise<{ operatorId: string }> }) {
@@ -7,7 +9,10 @@ export default async function InvitationsPage({ params }: { params: Promise<{ op
   return (
     <div className="space-y-4">
       <h1 className="border-b-2 border-gosi-blue text-3xl">Invitations</h1>
+      <p className="text-sm text-gosi-midnight-80">{copy.waveIntro}</p>
+      <ResetDemo operatorId={operatorId} />
       <InvitationsPanel operatorId={operatorId} regions={options.regions} sectors={options.sectors} />
+      <p className="text-sm text-gosi-midnight-80">{copy.waveTrack}</p>
       <table className="w-full bg-white text-sm">
         <thead className="bg-gosi-rich-blue text-left text-white"><tr>{["Wave", "Invited", "Opened", "Started", "Submitted", "Approved", "Delivered"].map((col) => <th key={col} className="p-2">{col}</th>)}</tr></thead>
         <tbody>

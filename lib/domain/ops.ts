@@ -79,12 +79,11 @@ export async function notesFor(personId: string) {
 
 export async function overview() {
   const appNow = await getAppNow();
-  const [invited, profiles, bookings, disputes, auditRows] = await Promise.all([
+  const [invited, profiles, bookings, disputes] = await Promise.all([
     admin().from("invitations").select("id", { count: "exact", head: true }),
     admin().from("retiree_profiles").select("state"),
     admin().from("bookings").select("id, status, starts_at").eq("status", "confirmed").gt("starts_at", appNow.toISOString()),
     admin().from("reports").select("id, due_by, status").eq("kind", "dispute").eq("status", "open"),
-    admin().from("audit_log").select("*").order("at", { ascending: false }).limit(8),
   ]);
   const states = profiles.data ?? [];
   const open = disputes.data ?? [];
@@ -97,7 +96,6 @@ export async function overview() {
     upcoming: (bookings.data ?? []).length,
     disputes: open.length,
     overdue: open.filter((row) => row.due_by && new Date(row.due_by) < appNow).length,
-    audit: auditRows.data ?? [],
   };
 }
 

@@ -1,4 +1,4 @@
-import { getDocuments, getProfile, getServiceRows, signedDocumentUrl } from "@/lib/domain/applications";
+import { getProfile, getServiceRows, operatorDocuments } from "@/lib/domain/applications";
 import { audit } from "@/lib/domain/audit";
 import { getAppNow } from "@/lib/domain/clock";
 import { notifyPerson } from "@/lib/domain/notifications";
@@ -38,18 +38,15 @@ export async function reviewDetail(personId: string) {
     employmentFor(personId),
     getProfile(personId),
     getServiceRows(personId),
-    getDocuments(personId),
+    operatorDocuments(personId),
     getServiceTypes(),
   ]);
-  const links = await Promise.all(
-    documents.map(async (doc) => ({ ...doc, url: await signedDocumentUrl(doc.file_path).catch(() => "") })),
-  );
   const types = new Map(serviceTypes.map((row) => [row.id, row]));
   return {
     person,
     jobs,
     profile,
-    documents: links,
+    documents,
     services: services.map((row) => ({ ...row, serviceType: types.get(row.service_type_id) })),
   };
 }

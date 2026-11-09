@@ -207,6 +207,21 @@ export type WaveFilters = {
   regions: string[];
 };
 
+export type WaveStep =
+  | { kind: "pool"; count: number }
+  | { kind: "region"; count: number; value: string }
+  | { kind: "sector"; count: number; value: string }
+  | { kind: "pension"; count: number; value: string }
+  | { kind: "years"; count: number; value: number };
+
+export type WavePreview = {
+  count: number;
+  willInvite: number;
+  steps: WaveStep[];
+  alternatives: { label: string; count: number }[];
+  people: { name: string; region: string; sector: string; pension: string; years: number }[];
+};
+
 export const LANGUAGES = [
   "Arabic",
   "English",

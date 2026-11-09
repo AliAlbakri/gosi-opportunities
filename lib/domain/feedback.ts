@@ -1,5 +1,4 @@
 import { getAppNow } from "@/lib/domain/clock";
-import { audit } from "@/lib/domain/audit";
 import { admin } from "@/lib/supabase/admin";
 
 export async function saveFeedback(input: {
@@ -24,23 +23,10 @@ export async function saveFeedback(input: {
     helped: input.helped,
     tags: input.tags,
     review_text: review || null,
-    review_status: review ? "pending" : null,
+    review_status: review ? "approved" : null,
     created_at: appNow.toISOString(),
   });
   if (insertError) return { ok: false as const, error: insertError.message };
-  return { ok: true as const };
-}
-
-export async function pendingReviews() {
-  const { data, error } = await admin().from("feedback").select("*").eq("review_status", "pending").order("created_at");
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
-
-export async function moderateReview(operatorId: string, bookingId: string, decision: "approved" | "rejected") {
-  const { error } = await admin().from("feedback").update({ review_status: decision }).eq("booking_id", bookingId);
-  if (error) return { ok: false as const, error: error.message };
-  await audit(operatorId, decision === "approved" ? "review.approved" : "review.rejected", "feedback", bookingId, {});
   return { ok: true as const };
 }
 

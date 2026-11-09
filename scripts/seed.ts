@@ -10,6 +10,71 @@ const DESC =
 const ACCOUNTING_DESC =
   "I spent 22 years as an accountant in the private sector. I can walk you through small-business accounts, bookkeeping habits, and what a VAT or Zakat obligation means in practice. This is guidance only.";
 
+const REVIEWS = [
+  "He walked through my restaurant VAT return line by line using last month's invoices.",
+  "She slowed the conversation down until I could answer without translating first.",
+  "We rebuilt my cash book from a shoebox of receipts and I left with a weekly habit.",
+  "The exam tips were specific: timing, the essay shape, and three phrases I still use.",
+  "I finally understand the difference between profit and the cash in the drawer.",
+  "Arabic greetings and shop talk, practised until they felt natural.",
+  "He marked the lines on my income statement that an owner should question.",
+  "We rehearsed my project introduction and cut it from four minutes to one.",
+  "Bookkeeping categories now match how my stall actually takes money.",
+  "Zakat on inventory was the part I had been guessing. It is written down now.",
+  "Pronunciation drills for the words I stumble on in meetings.",
+  "She used my own lease to explain what a statement of accounts is for.",
+  "A calm hour on how to talk to a bookkeeper without feeling lost.",
+  "French numbers and dates, enough for a parent-teacher meeting.",
+  "We compared two months of sales and spotted the week the costs jumped.",
+  "English for a job interview: answers, not just vocabulary lists.",
+  "He showed me which records to keep if a review ever asks.",
+  "I practised explaining my idea to someone who had not read the slides.",
+  "The balance sheet stopped being a wall of numbers.",
+  "Urdu examples for the customers who visit the shop on Thursdays.",
+  "We set a simple chart of accounts I can keep up after closing.",
+  "She corrected my tense gently and let me try the sentence again.",
+  "VAT on delivery fees was the question I came with, and it is answered.",
+  "A clear plan for the speaking section of the language exam.",
+  "He drew the money in and money out for one Saturday at the restaurant.",
+  "I left with three phrases for booking a table and taking an order.",
+  "Management accounts in plain language, using my contracting invoices.",
+  "We role-played a difficult customer conversation in English.",
+  "The Zakat base was smaller than I feared once we listed the debts.",
+  "Reading practice from a short news paragraph, then my own summary.",
+  "She showed me how to spot a missing receipt before month end.",
+  "My presentation opening is now one sentence I can say slowly.",
+  "We labelled every pot of cash: sales, tips, and what I pay myself.",
+  "Hindi small talk for the staff room, not a textbook chapter.",
+  "He explained accruals with the unpaid supplier bill on my desk.",
+  "I can introduce my neighbourhood and my work without freezing.",
+  "A walkthrough of a profit and loss that a non-accountant can read.",
+  "Pronunciation of the sounds I avoid, with a list to practise.",
+  "We checked whether my prices cover the VAT I have to hand over.",
+  "Spanish for a family visit: airport, hotel, and a doctor's appointment.",
+  "The session used my actual trial balance, not a sample company.",
+  "She had me retell a story and only then fixed the grammar.",
+  "I know which folder to keep the Zakat working papers in.",
+  "Exam timing: we did one passage against a clock.",
+  "He translated the accountant's email into what I should do this week.",
+  "Everyday English for calling a school and asking for the head teacher.",
+  "We separated owner drawings from business costs. That was the whole hour.",
+  "Arabic letters on signs, read out loud until I stopped guessing.",
+  "A checklist for the monthly close that fits on one page.",
+  "I practised answering 'tell me about yourself' without reading notes.",
+  "The statement of cash flows finally matched the bank app.",
+  "She picked three grammar slips and we repaired only those.",
+  "Bookkeeping for a stall that mixes cash and transfer.",
+  "We planned how I will ask questions in the oral exam.",
+  "He flagged a supplier balance that had been copied into the wrong month.",
+  "Confidence more than grammar: I spoke for ten minutes straight.",
+  "Zakat on receivables, with my own aged list as the example.",
+  "A short dialogue for welcoming a guest and offering coffee, in English.",
+  "I can read the notes under the accounts instead of skipping them.",
+  "We built a revision timetable that respects my shift pattern.",
+  "Clear, patient, and specific to the papers I brought.",
+  "I left knowing the one number to watch before I price a new dish.",
+];
+
 function uuid(name: string) {
   const h = createHash("sha1").update(`gosi:${name}`).digest("hex");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
@@ -237,7 +302,7 @@ export async function seedDemo() {
       {
         id: uuid(`job2:${person.national}`),
         person_id: idOf.get(person.national),
-        employer: "Earlier employer",
+        employer: person.sector === "Education" ? "Riyadh Secondary Schools, Ministry of Education" : "Al-Faisal Accounting Co.",
         sector: person.sector,
         start_date: "1988-01-01",
         end_date: "1993-12-31",
@@ -274,7 +339,7 @@ export async function seedDemo() {
     sent_at: new Date(appNow.getTime() - 20 * 86400000).toISOString(),
   });
 
-  const invitedSlugs = new Set(["ret-mona", "ret-saad", "ret-huda", "ret-abdullah", "ret-latifa", "ret-majed", "ret-turki", "ret-hassan", "ret-nasser", "ret-extra-1", "ret-extra-2", "ret-extra-3"]);
+  const invitedSlugs = new Set(["ret-mona", "ret-saad", "ret-huda", "ret-abdullah", "ret-latifa", "ret-majed", "ret-turki", "ret-hassan", "ret-nasser", "ret-extra-1", "ret-extra-2", "ret-extra-3", "ret-extra-4", "ret-extra-5"]);
   const invitations = all
     .filter((person) => person.slug && invitedSlugs.has(person.slug))
     .map((person) => ({
@@ -311,12 +376,18 @@ export async function seedDemo() {
       application_step: 5,
       discipline_role: index % 2 === 0 ? "Teacher" : "Accountant",
       languages: ["Arabic", "English"],
-      intro: "Happy to share what I learned over a long career.",
+      intro: [
+        "I taught English conversation for two decades and still enjoy helping people prepare for a meeting.",
+        "I kept the books for a family trading company and can walk you through a monthly close.",
+        "I coached students through language exams and like a clear practice plan.",
+        "I prepared management accounts for a contracting firm and explain the statements in plain words.",
+        "I am still finishing the go-live steps, so seekers will not see me until that is done.",
+      ][index],
       submitted_at: liveAt,
       terms_accepted_at: liveAt,
       first_approved_at: liveAt,
-      onboarding_watched_at: liveAt,
-      readiness_passed_at: liveAt,
+      onboarding_watched_at: slug === "ret-extra-5" ? null : liveAt,
+      readiness_passed_at: slug === "ret-extra-5" ? null : liveAt,
     } as (typeof profiles)[number]);
   }
   const { error: profileError } = await db.from("retiree_profiles").insert(profiles.map((row) => ({ ...row, updated_at: liveAt })));
@@ -338,20 +409,36 @@ export async function seedDemo() {
     { person_id: pid("ret-extra-3"), service_type_id: "edu-other-lang", description: DESC, status: "approved", decided_by: "op-noura", decided_at: liveAt },
     { person_id: pid("ret-extra-4"), service_type_id: "acc-small-biz", description: ACCOUNTING_DESC, status: "approved", decided_by: "op-noura", decided_at: liveAt },
     { person_id: pid("ret-extra-5"), service_type_id: "acc-vat-zakat", description: ACCOUNTING_DESC, status: "approved", decided_by: "op-noura", decided_at: liveAt },
-  ].map((row) => ({ id: uuid(`rst:${row.person_id}:${row.service_type_id}`), ...row }));
+  ].map((row, index) => ({ id: uuid(`rst:${row.person_id}:${row.service_type_id}`), ...row, description: `${row.description} We will use an example from your own work, starting with point ${index + 1}.` }));
   const { error: rstError } = await db.from("retiree_service_types").insert(serviceRows);
   if (rstError) throw new Error(rstError.message);
 
-  const windowPeople = ["ret-abdullah", "ret-latifa", "ret-majed", "ret-nasser", "ret-extra-1", "ret-extra-2", "ret-extra-3", "ret-extra-4", "ret-extra-5", "ret-turki"];
-  const windows = windowPeople.flatMap((slug) =>
-    [0, 1, 2, 3, 4].map((weekday) => ({
-      id: uuid(`win:${slug}:${weekday}`),
-      person_id: pid(slug),
+  const patterns = [
+    { days: [0, 1, 2, 3, 4], start: "09:00:00", end: "12:00:00" },
+    { days: [0, 1, 2, 3, 4], start: "18:00:00", end: "21:00:00" },
+    { days: [5, 6], start: "10:00:00", end: "14:00:00" },
+    { days: [1, 3, 5], start: "08:00:00", end: "11:00:00" },
+  ];
+  const windowPeople = ["ret-abdullah", "ret-latifa", "ret-majed", "ret-extra-1", "ret-extra-2", "ret-extra-3", "ret-extra-4", "ret-turki"];
+  const windows = [
+    ...windowPeople.flatMap((slug, index) => {
+      const pattern = patterns[index % patterns.length];
+      return pattern.days.map((weekday) => ({
+        id: uuid(`win:${slug}:${weekday}`),
+        person_id: pid(slug),
+        weekday,
+        start_time: pattern.start,
+        end_time: pattern.end,
+      }));
+    }),
+    ...[0, 1, 2, 3, 4].map((weekday) => ({
+      id: uuid(`win:ret-nasser:${weekday}`),
+      person_id: pid("ret-nasser"),
       weekday,
       start_time: "09:00:00",
-      end_time: "17:00:00",
+      end_time: "10:00:00",
     })),
-  );
+  ];
   const { error: winError } = await db.from("availability_windows").insert(windows);
   if (winError) throw new Error(winError.message);
 
@@ -398,14 +485,14 @@ export async function seedDemo() {
       completed_at: new Date(starts.getTime() + 3600000).toISOString(),
       created_at: new Date(starts.getTime() - 3 * 86400000).toISOString(),
     });
-    const review = i < 3 ? "Clear and patient. I left knowing what to practise next." : i === 4 ? "Well prepared and easy to follow." : null;
+    const review = REVIEWS[i % REVIEWS.length];
     feedback.push({
       booking_id: id,
       rating: ratingPlan[i] ?? 5,
       helped: true,
       tags: ["clear explanation", "strong knowledge"],
       review_text: review,
-      review_status: review ? (i === 0 || i === 4 ? "pending" : "approved") : null,
+      review_status: i === 0 || i === 4 ? "pending" : "approved",
       created_at: new Date(starts.getTime() + 3700000).toISOString(),
     });
   }
@@ -480,15 +567,14 @@ export async function seedDemo() {
     created_at: appNow.toISOString(),
   });
 
-  let cursor = new Date(saraSlot.getTime() + 2 * 3600000);
-  const weekEnd = saraSlot.getTime() + 7 * 86400000;
+  let cursor = addRiyadhDays(atRiyadh(riyadhParts(appNow).y, riyadhParts(appNow).m, riyadhParts(appNow).d, 12), 1);
+  const horizon = appNow.getTime() + 30 * 86400000;
   let n = 0;
-  while (cursor.getTime() < weekEnd && n < 40) {
+  while (cursor.getTime() < horizon && n < 40) {
     const parts = riyadhParts(cursor);
     if (parts.weekday <= 4) {
-      for (const hour of [9, 10, 11, 12, 13, 14, 15, 16]) {
-        const slot = atRiyadh(parts.y, parts.m, parts.d, hour);
-        if (slot.getTime() <= saraSlot.getTime() || slot.getTime() >= weekEnd) continue;
+      const slot = atRiyadh(parts.y, parts.m, parts.d, 9);
+      if (slot.getTime() >= appNow.getTime() + 24 * 3600000) {
         bookings.push({
           id: uuid(`full:${n}`),
           seeker_id: pid("seek-reem"),

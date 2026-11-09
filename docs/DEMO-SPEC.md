@@ -78,15 +78,16 @@ Sections in order:
 Bottom tab bar: Home, Contributions, Help, Benefits, More (green dot under active). Only Home and More (Log out, Notifications) are functional.
 
 ### 3.4 The GOSI Opportunities entry card(s)
-PRD note: an uninvited retiree must not see the retiree entry point. The seeker entry is open to every user aged 18 and over. So:
-- **Seeker card (all users):** Rich Blue card, white title "Learn from experienced retirees", subtitle "Book a one-hour video session with a GOSI-verified retiree", green pill "Explore ›" → seeker home.
-- **Retiree card (invited retirees only), shown first:** green-tint card (Green 10% bg, Rich Blue text, green arrow device). Copy by state:
-  - invited, no profile: "You're invited to GOSI Opportunities" / "Share your experience with people who need it" / **Start application**. First tap sets `invitations.opened_at`.
-  - draft: "Continue your application" / progress "3 of 5 steps".
-  - pending_review: "Application under review" / "We'll notify you in the app".
-  - not_approved (any Service Type not approved): "Action needed on your application" / **Review and resubmit**.
-  - active: "Your GOSI Opportunities" / next session time or "No upcoming sessions" / **Open**.
-  - paused: "Your profile is paused" / "Contact GOSI for details" / **Open** (read-only).
+UX-OVERHAUL §3.2 replaces the earlier two-card layout. An uninvited retiree still sees no entry.
+
+| Persona | What appears on home |
+|---|---|
+| Retiree, invited | One Rich Blue hero in a "GOSI Opportunities" section after GOSI Services. No seeker card. |
+| Retiree, not invited | No section. |
+| Non-retiree, 18+ | One seeker hero in that section, plus one promo in "You Might Be Interested". |
+| Under 18 | The same seeker card. Tapping it opens the age screen. |
+
+Hero copy for an invited retiree: Learn more (no profile), Continue (draft), View status (pending review), Review and resubmit (not approved), Finish setup (go-live incomplete), Open (active), View details (paused). First open of an invitation still sets `opened_at`.
 
 ### 3.5 Notifications
 - Inbox: bell → list (newest first, unread bold, time relative to app time) → tap opens `link`.

@@ -24,7 +24,7 @@ export function IphoneFrame({
       <div className="relative mx-auto h-[892px] w-[438px]">
         <Hardware />
         <div className="absolute left-3 top-3 h-[868px] w-[414px] rounded-[54px] bg-[#1c1c1e] p-3 shadow-[0_24px_60px_rgba(0,0,78,0.28)]">
-          <div className="h-[844px] w-[390px] overflow-hidden rounded-[42px] bg-gosi-midnight-10">{children}</div>
+          <div className="h-[844px] w-[390px] overflow-hidden rounded-[42px] bg-gosi-midnight-10 [transform:translateZ(0)]">{children}</div>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ export function IphoneFrame({
       <div className="relative max-[499px]:h-dvh max-[499px]:overflow-hidden min-[500px]:h-[892px] min-[500px]:w-[438px]">
         <Hardware className="max-[499px]:hidden" />
         <div className="h-full w-full min-[500px]:absolute min-[500px]:left-3 min-[500px]:top-3 min-[500px]:h-[868px] min-[500px]:w-[414px] min-[500px]:rounded-[54px] min-[500px]:bg-[#1c1c1e] min-[500px]:p-3 min-[500px]:shadow-[0_24px_60px_rgba(0,0,78,0.28)]">
-          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-gosi-midnight-10 min-[500px]:h-[844px] min-[500px]:w-[390px] min-[500px]:rounded-[42px]">
+          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-gosi-midnight-10 [transform:translateZ(0)] min-[500px]:h-[844px] min-[500px]:w-[390px] min-[500px]:rounded-[42px]">
             {children}
           </div>
         </div>

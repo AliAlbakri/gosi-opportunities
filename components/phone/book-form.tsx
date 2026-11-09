@@ -8,7 +8,7 @@ import { PrimaryButton, StickyFooter } from "@/components/phone/ui/buttons";
 import { Stepper } from "@/components/phone/ui/flow";
 import { DayStrip, SlotGrid } from "@/components/phone/ui/schedule";
 import { copy } from "@/lib/copy";
-import { formatClock, formatDay } from "@/lib/format";
+import { formatClock, formatDay, formatWhen } from "@/lib/format";
 
 function downloadIcs(title: string, startIso: string) {
   const start = new Date(startIso);
@@ -41,9 +41,11 @@ export function BookForm({
   initialService?: string;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState(services.length > 1 && !initialService ? 1 : 2);
-  const [rst, setRst] = useState(initialService ?? services[0]?.id ?? "");
-  const [slot, setSlot] = useState(slots[0] ?? "");
+  const picked = services.find((row) => row.id === initialService)?.id;
+  const chosen = picked ?? services[0]?.id ?? "";
+  const [step, setStep] = useState(services.length > 1 && !picked ? 1 : 2);
+  const [rst, setRst] = useState(chosen);
+  const [openSlots, setOpenSlots] = useState(slots);
   const [need, setNeed] = useState("");
   const [goal, setGoal] = useState("");
   const [terms, setTerms] = useState(false);
@@ -53,13 +55,14 @@ export function BookForm({
   const service = services.find((row) => row.id === rst) ?? services[0];
   const days = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const item of slots) {
+    for (const item of openSlots) {
       const key = formatDay(item);
       map.set(key, [...(map.get(key) ?? []), item]);
     }
     return [...map.entries()].map(([key, items]) => ({ key, label: key.split(" ")[0] ?? key, date: key.split(" ")[1] ?? "", items }));
-  }, [slots]);
+  }, [openSlots]);
   const [day, setDay] = useState(days[0]?.key ?? "");
+  const [slot, setSlot] = useState(days[0]?.items[0] ?? "");
   const hours = days.find((row) => row.key === day)?.items ?? [];
   const groups = [
     { title: "Morning", slots: hours.filter((item) => Number(formatClock(item).slice(0, 2)) < 12).map((item) => ({ id: item, label: `${formatClock(item)}–${formatClock(new Date(new Date(item).getTime() + 3600000))}` })) },
@@ -96,7 +99,7 @@ export function BookForm({
           <>
             <DayStrip days={days.map((row) => ({ key: row.key, label: row.label, date: row.date, open: true }))} selected={day} onSelect={(key) => { setDay(key); const first = days.find((row) => row.key === key)?.items[0]; if (first) setSlot(first); }} />
             <SlotGrid groups={groups} selected={slot} onSelect={setSlot} />
-            {!slots.length && <p>Fully booked for now</p>}
+            {!openSlots.length && <p>Fully booked for now</p>}
             <p className="text-[13px] text-gosi-midnight-50">All times are Riyadh time. Book at least 24 hours ahead, up to 30 days.</p>
           </>
         )}
@@ -110,7 +113,7 @@ export function BookForm({
           <div className="rounded-[20px] bg-white p-4 text-[15px]">
             <p className="font-semibold">{retireeName}</p>
             <p>{service?.name}</p>
-            <p>{slot ? `${formatClock(slot)} · 1 hour · ${service?.priceLabel}` : ""}</p>
+            <p>{slot ? `${formatWhen(slot)} · 1 hour · ${service?.priceLabel}` : ""}</p>
             <p className="mt-2 text-[13px] text-gosi-midnight-50">Cancellation is free up to 3 hours before. {copy.disclaimer}</p>
             <label className="mt-3 flex min-h-11 items-center gap-2"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} />{copy.termsLabel}</label>
           </div>
@@ -120,11 +123,22 @@ export function BookForm({
       <StickyFooter>
         <div className="flex gap-2">
           {step > 1 && <button type="button" className="h-[52px] flex-1 rounded-full border" onClick={() => setStep(step - 1)}>Back</button>}
-          <PrimaryButton className="flex-1" disabled={pending || (step === 2 && !slot) || (step === 3 && (!need.trim() || !goal.trim())) || (step === 4 && !terms)} onClick={() => {
+          <PrimaryButton className="flex-1" disabled={pending || (step === 2 && !hours.some((item) => item === slot)) || (step === 3 && (!need.trim() || !goal.trim())) || (step === 4 && !terms)} onClick={() => {
             if (step < 4) { setStep(step + 1); return; }
             start(async () => {
               const result = await bookAction({ personaId, seekerId, birthDate, retireeId, retireeServiceTypeId: rst, startsAt: slot, need, goal, terms });
-              if (!result.ok) { setError(result.error === copy.slotTaken ? "That time was just booked. Please pick another." : result.error); if (result.error === copy.slotTaken) setStep(2); return; }
+              if (!result.ok) {
+                const taken = result.error === copy.slotTaken;
+                setError(taken ? "That time was just booked. Please pick another." : result.error);
+                if (taken) {
+                  const rest = openSlots.filter((item) => item !== slot);
+                  setOpenSlots(rest);
+                  const next = rest.find((item) => formatDay(item) === day) ?? rest[0];
+                  if (next) { setDay(formatDay(next)); setSlot(next); }
+                  setStep(2);
+                }
+                return;
+              }
               if ("booking" in result && result.paid) router.push(`/phone/${personaId}/opportunities/bookings/${result.booking.id}/pay`);
               else if ("booking" in result) setBooked(slot);
             });

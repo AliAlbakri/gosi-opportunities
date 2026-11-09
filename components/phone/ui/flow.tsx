@@ -34,7 +34,7 @@ export function Timeline({ items }: { items: { title: string; caption?: string; 
 export function BottomSheet({ title, open, onClose, children }: { title: string; open: boolean; onClose: () => void; children: ReactNode }) {
   if (!open) return null;
   return (
-    <div className="absolute inset-0 z-30 flex items-end bg-gosi-rich-blue/40" onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex items-end bg-gosi-rich-blue/40" onClick={onClose}>
       <div className="max-h-[80%] w-full overflow-y-auto rounded-t-3xl bg-white p-5 text-gosi-rich-blue" onClick={(event) => event.stopPropagation()}>
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gosi-midnight-25" />
         <p className="text-lg font-semibold">{title}</p>

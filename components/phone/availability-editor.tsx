@@ -66,7 +66,7 @@ export function AvailabilityEditor({
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {chips.map((chip) => (
-                <button key={`${chip.start}-${chip.end}`} type="button" className="h-11 rounded-full bg-gosi-green-10 px-3 text-[13px] font-semibold" onClick={() => save(rows.filter((row) => row !== chip))}>
+                <button key={`${chip.start}-${chip.end}`} type="button" className="h-11 rounded-full bg-gosi-green-10 px-3 text-[13px] font-semibold" onClick={() => { if (window.confirm(`Remove ${chip.start}–${chip.end} on ${name}?`)) save(rows.filter((row) => row !== chip)); }}>
                   {chip.start}–{chip.end}
                 </button>
               ))}

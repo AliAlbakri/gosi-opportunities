@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AppHeader } from "@/components/phone/ui/header";
 import { Avatar, Card, VerifiedBadge } from "@/components/phone/ui/bits";
 import { StickyFooter } from "@/components/phone/ui/buttons";
@@ -17,6 +17,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ person
   const user = await requireUser(personaId);
   const profile = await publicProfile(retireeId);
   if (!user || !profile) notFound();
+  if (user.person.is_retiree) redirect(`/phone/${personaId}/opportunities/retiree`);
+  if (!profile.listed) notFound();
   const appNow = await getAppNow();
   const years = Math.round(yearsOfEmployment(profile.jobs, appNow));
   const next = profile.slots[0];

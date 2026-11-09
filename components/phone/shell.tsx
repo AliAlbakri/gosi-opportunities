@@ -68,7 +68,7 @@ export function PhoneShell({
             </div>
           </button>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</div>
+        <div data-phone-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</div>
         <div className="pointer-events-none absolute inset-x-0 bottom-1.5 z-10 flex justify-center" aria-hidden>
           <div className="h-1 w-28 rounded-full bg-gosi-midnight/70" />
         </div>

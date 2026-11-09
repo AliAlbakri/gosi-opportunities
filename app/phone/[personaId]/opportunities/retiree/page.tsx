@@ -13,6 +13,7 @@ import { getSettings } from "@/lib/domain/settings";
 import { formatWhen } from "@/lib/format";
 import { admin } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/phone/ui/bits";
+import { AppHeader } from "@/components/phone/ui/header";
 
 export default async function RetireeHome({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
@@ -21,7 +22,8 @@ export default async function RetireeHome({ params }: { params: Promise<{ person
   const invitation = await getInvitation(user.person.id);
   if (!invitation) {
     return (
-      <div className="space-y-4 p-4 text-gosi-rich-blue">
+      <div className="space-y-4 px-5 py-2 text-gosi-rich-blue">
+        <AppHeader title="GOSI Opportunities" />
         <BrandIcon name="partnership" className="h-12 w-12" />
         <h1 className="text-2xl font-medium">GOSI Opportunities</h1>
         <p>{copy.notInvitedBody}</p>
@@ -35,7 +37,8 @@ export default async function RetireeHome({ params }: { params: Promise<{ person
     const step = profile?.application_step ?? 1;
     const started = Boolean(profile);
     return (
-      <div className="space-y-4 p-4 text-gosi-rich-blue">
+      <div className="space-y-4 px-5 py-2 text-gosi-rich-blue">
+        <AppHeader title="GOSI Opportunities" />
         <BrandIcon name="partnership" className="h-12 w-12" />
         <h1 className="text-2xl font-medium">{copy.welcomeTitle}</h1>
         <p>{copy.welcomeBody}</p>
@@ -60,7 +63,8 @@ export default async function RetireeHome({ params }: { params: Promise<{ person
     { label: "Notes", href: "notes", icon: "letter" },
   ];
   return (
-    <div className="space-y-3 p-4 text-gosi-rich-blue">
+    <div className="space-y-3 px-5 py-2 text-gosi-rich-blue">
+      <AppHeader title="GOSI Opportunities" />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-medium">{profile.state === "paused" ? "Your profile is paused" : `Hello, ${user.person.first_name}`}</h1>
         <StatusPill>{profile.state === "paused" || !profile.accepting_bookings ? "Paused" : "Live"}</StatusPill>

@@ -37,5 +37,5 @@ export function IconButton({ children, label, className = "", ...props }: Button
 }
 
 export function StickyFooter({ children }: { children: ReactNode }) {
-  return <div className="sticky bottom-0 z-10 border-t border-gosi-midnight-10 bg-white px-5 py-3 pb-5">{children}</div>;
+  return <div className="sticky bottom-0 z-10 mt-auto border-t border-gosi-midnight-10 bg-white px-5 py-3 pb-5">{children}</div>;
 }

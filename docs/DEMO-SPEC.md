@@ -309,7 +309,7 @@ Wipes all tables except taxonomy and re-creates. Use realistic Saudi names. Time
 - **Operators:** `op-noura` (Noura Al-Harbi), `op-khalid` (Khalid Al-Mutairi).
 - **GOSI people:** ~40 retirees (mix of public/private/combined, sectors Education, Finance, Banking, Government, Construction, Healthcare, Retail; regions Riyadh, Makkah, Eastern Province, Madinah, Qassim, Asir), with 1–4 employment rows each and pension bank + masked IBAN; ~12 non-retirees (employees, residents incl. non-Arabic speakers), 1 user aged 16.
 - **Retiree personas (cover every state):**
-  - `ret-fahad`: retired English teacher, private pension, **invited, not opened** (best for the live onboarding demo).
+  - `ret-fahad`: retired English teacher, private pension, **not invited yet** (the live demo invites him from the ops wave).
   - `ret-mona`: retired Arabic teacher, **draft** at step 3.
   - `ret-saad`: retired accountant (GOSI sector reads Construction), **pending review** for VAT/Zakat and Bookkeeping (demo of the PRD example).
   - `ret-huda`: teacher, **not approved** for Exam prep (`INSUFFICIENT_EVIDENCE`), nothing approved yet.
@@ -317,10 +317,10 @@ Wipes all tables except taxonomy and re-creates. Use realistic Saudi names. Time
   - `ret-latifa`: English teacher, **active**, new (no ratings).
   - `ret-majed`: accountant, **active**, one late cancellation and one complaint, rating 3.4.
   - `ret-turki`: teacher, **paused** by ops with history.
-  - 6 more active retirees across Service Types, so browse feels full; one fully booked for the next week.
+  - 6 more active retirees across Service Types, so browse feels full; Nasser is fully booked for 30 days, and Khaled (`ret-extra-5`) is invited with the go-live checklist still open.
   - ~25 retirees not invited (wave candidates).
 - **Seeker personas:** `seek-sara` (employee, 29), `seek-james` (non-Arabic-speaking resident, 41, wants Arabic), `seek-omar` (small restaurant owner, 35, wants VAT guidance), `seek-reem` (22), `seek-teen` (Yazan, 16, blocked).
-- **History:** one past wave ("Wave 1 · Riyadh teachers", 12 invited) with funnel numbers; ~40 past completed sessions with feedback (some written reviews approved, two pending moderation); upcoming confirmed bookings for `seek-sara` and `seek-omar` (one starting within 2 days); a no-show; a late cancellation; ops notes; audit history.
+  - **History:** one past wave ("Wave 1 · Riyadh teachers", 13 invited, including Khaled whose go-live checklist is incomplete) with funnel numbers; ~40 past completed sessions with a unique written review each (two pending moderation); upcoming confirmed bookings for `seek-sara` and `seek-omar` (one starting within 2 days); Nasser fully booked for 30 days; a no-show; a late cancellation; ops notes; audit history.
 - **Paid history (pre-existing, even though the switch starts off):** a few historical paid sessions in each money state (released, paid out with a past payout, refunded) and one **open dispute** due in 6 working days, so ops screens are populated. (They were created during a past period when the switch was on; label in audit log.)
 - Every persona's `blurb` describes their state for the Nafath picker and demo home.
 

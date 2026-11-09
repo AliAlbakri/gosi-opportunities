@@ -8,8 +8,9 @@ import { getAppNow } from "@/lib/domain/clock";
 import { requireUser } from "@/lib/domain/personas";
 import { coverFor, serviceIcons } from "@/lib/phone-icons";
 
-export default async function CategoryPage({ params }: { params: Promise<{ personaId: string; categoryId: string }> }) {
+export default async function CategoryPage({ params, searchParams }: { params: Promise<{ personaId: string; categoryId: string }>; searchParams: Promise<{ list?: string }> }) {
   const { personaId, categoryId } = await params;
+  const query = await searchParams;
   const user = await requireUser(personaId);
   if (!user) notFound();
   if (user.person.is_retiree) redirect(`/phone/${personaId}/opportunities/retiree`);
@@ -54,8 +55,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ perso
         </section>
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Retirees in this category</h2>
-          {cards.slice(0, 3).map((card) => <RetireeCard key={card.personId} href={`/phone/${personaId}/opportunities/p/${card.personId}`} name={card.name} discipline={card.discipline} languages={card.languages} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
-          <Link href={`/phone/${personaId}/opportunities/t/${types[0]?.id ?? ""}`} className="block text-center text-[15px] font-semibold text-gosi-blue">See all {cards.length} retirees</Link>
+          {(query.list === "all" ? cards : cards.slice(0, 3)).map((card) => <RetireeCard key={card.personId} href={`/phone/${personaId}/opportunities/p/${card.personId}`} name={card.name} discipline={card.discipline} languages={card.languages} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
+          {query.list !== "all" && cards.length > 3 && <Link href={`/phone/${personaId}/opportunities/c/${categoryId}?list=all`} className="block text-center text-[15px] font-semibold text-gosi-blue">See all {cards.length} retirees</Link>}
         </section>
       </div>
     </div>

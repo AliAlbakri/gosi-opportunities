@@ -333,13 +333,13 @@ export async function seedDemo() {
     id: waveId,
     name: "Wave 1 · Riyadh teachers",
     filters: { regions: ["Riyadh"], sectors: ["Education"] },
-    size_cap: 12,
+    size_cap: 13,
     status: "sent",
     created_by: "op-noura",
     sent_at: new Date(appNow.getTime() - 20 * 86400000).toISOString(),
   });
 
-  const invitedSlugs = new Set(["ret-mona", "ret-saad", "ret-huda", "ret-abdullah", "ret-latifa", "ret-majed", "ret-turki", "ret-hassan", "ret-nasser", "ret-extra-1", "ret-extra-2", "ret-extra-3", "ret-extra-4", "ret-extra-5"]);
+  const invitedSlugs = new Set(["ret-mona", "ret-saad", "ret-huda", "ret-abdullah", "ret-latifa", "ret-majed", "ret-turki", "ret-hassan", "ret-nasser", "ret-extra-1", "ret-extra-2", "ret-extra-3", "ret-extra-5"]);
   const invitations = all
     .filter((person) => person.slug && invitedSlugs.has(person.slug))
     .map((person) => ({

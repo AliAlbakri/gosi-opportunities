@@ -22,7 +22,7 @@ export default async function OverviewPage() {
       <table className="w-full overflow-hidden rounded-2xl bg-white text-sm">
         <thead className="bg-gosi-rich-blue text-white"><tr><th className="p-2 text-left">When</th><th className="p-2 text-left">Action</th><th>Actor</th></tr></thead>
         <tbody>
-          {data.audit.map((row) => <tr key={row.id} className="border-t border-gosi-row-border"><td className="p-2">{formatLong(row.at)}</td><td>{row.action}</td><td>{row.actor}</td></tr>)}
+          {data.audit.map((row, index) => <tr key={row.id} className={`border-t border-gosi-row-border ${index % 2 ? "bg-gosi-midnight-10" : ""}`}><td className="p-2">{formatLong(row.at)}</td><td>{row.action}</td><td>{row.actor}</td></tr>)}
         </tbody>
       </table>
     </div>

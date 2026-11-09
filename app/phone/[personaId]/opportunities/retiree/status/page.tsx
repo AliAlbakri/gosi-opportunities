@@ -5,6 +5,8 @@ import { getProfile, getServiceRows } from "@/lib/domain/applications";
 import { requireUser } from "@/lib/domain/personas";
 import { getServiceTypes } from "@/lib/domain/settings";
 import { REASON_CODES } from "@/lib/types";
+import { AppHeader } from "@/components/phone/ui/header";
+import { Timeline } from "@/components/phone/ui/flow";
 
 export default async function StatusPage({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
@@ -13,8 +15,14 @@ export default async function StatusPage({ params }: { params: Promise<{ persona
   const [profile, services, types] = await Promise.all([getProfile(user.person.id), getServiceRows(user.person.id), getServiceTypes()]);
   const names = new Map(types.map((row) => [row.id, row.name]));
   return (
-    <div className="space-y-3 p-4 text-gosi-rich-blue">
-      <h1 className="text-2xl font-medium">Application status</h1>
+    <div className="space-y-3 px-5 py-2 text-gosi-rich-blue">
+      <AppHeader title="Application status" />
+      <Timeline items={[
+        { title: "Submitted", state: profile?.submitted_at ? "done" : "upcoming" },
+        { title: "Under review", state: profile?.state === "pending_review" ? "current" : profile?.state === "active" ? "done" : "upcoming" },
+        { title: "Get ready", state: profile?.state === "active" ? "current" : "upcoming" },
+        { title: "Live", state: "upcoming" },
+      ]} />
       <p className="capitalize">{profile?.state?.replaceAll("_", " ")}</p>
       {services.map((row) => (
         <article key={row.id} className="rounded-3xl bg-white p-4">

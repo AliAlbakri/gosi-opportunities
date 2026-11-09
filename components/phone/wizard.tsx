@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveDraftAction, submitAction, uploadAction } from "@/app/actions/flow";
 import { Button } from "@/components/ui/button";
+import { AppHeader } from "@/components/phone/ui/header";
+import { Stepper } from "@/components/phone/ui/flow";
 import { Field, TextArea, TextInput } from "@/components/ui/fields";
 import { copy } from "@/lib/copy";
 import { LANGUAGES, type Category, type ServiceType } from "@/lib/types";
@@ -31,6 +33,8 @@ export function Wizard({
   const [form, setForm] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
 
@@ -40,15 +44,30 @@ export function Wizard({
       if (!result.ok) setError(result.error);
       else {
         setStep(next);
+        setSaved(true);
         setError(null);
         router.refresh();
       }
     });
   };
 
+  if (submitted) {
+    return (
+      <div className="space-y-4 px-5 py-8 text-gosi-rich-blue">
+        <h1 className="text-[28px] font-bold">Application submitted</h1>
+        <p>GOSI reviews each service and notifies you in the app. Then you watch a short guide, test your call, and set your hours.</p>
+        <Button onClick={() => router.push(`/phone/${personaId}/home`)}>Back to home</Button>
+        <Button variant="secondary" onClick={() => router.push(`/phone/${personaId}/opportunities/retiree/status`)}>View status</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 p-4 text-gosi-rich-blue">
-      <p className="text-sm">Step {step} of 5</p>
+    <div className="space-y-4 px-5 py-2 text-gosi-rich-blue">
+      <AppHeader title="Your application" />
+      <Stepper step={step} total={5} label={copy.applySteps[step - 1]} />
+      {saved && <p className="text-[13px] text-gosi-midnight-50">Saved</p>}
+      {step === 1 && <p className="text-sm">{copy.applyIntro}</p>}
       {step === 1 && (
         <div className="space-y-3 rounded-3xl bg-white p-4">
           <p className="text-xs">{copy.verified}</p>
@@ -124,7 +143,7 @@ export function Wizard({
           <p>{form.offers.length} Service Types</p>
           <div className="max-h-32 overflow-y-auto text-xs">{copy.termsBody}</div>
           <label className="flex gap-2"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />{copy.termsLabel}</label>
-          <Button disabled={pending || !agreed} onClick={() => start(async () => { const saved = await saveDraftAction(personId, { step: 5, disciplineRole: form.discipline, specializations: form.specializations, intro: form.intro, languages: form.languages, offerings: form.offers }); if (!saved.ok) return setError(saved.error); const result = await submitAction(personId, personaId); if (!result.ok) setError(result.error); else router.push(`/phone/${personaId}/opportunities/retiree/status`); })}>Submit for review</Button>
+          <Button disabled={pending || !agreed} onClick={() => start(async () => { const saved = await saveDraftAction(personId, { step: 5, disciplineRole: form.discipline, specializations: form.specializations, intro: form.intro, languages: form.languages, offerings: form.offers }); if (!saved.ok) return setError(saved.error); const result = await submitAction(personId, personaId); if (!result.ok) setError(result.error); else setSubmitted(true); })}>Submit for review</Button>
         </div>
       )}
       {error && <p>{error}</p>}

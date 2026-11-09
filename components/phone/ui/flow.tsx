@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+
+type FaqAnswer = string | { off: string; on: string };
 
 export function Stepper({ step, total, label }: { step: number; total: number; label: string }) {
   return (
@@ -44,16 +47,23 @@ export function BottomSheet({ title, open, onClose, children }: { title: string;
   );
 }
 
-export function FaqList({ items }: { items: { q: string; a: string }[] }) {
-  const [open, setOpen] = useState<string | null>(null);
+export function FaqList({ items, paid }: { items: readonly { q: string; a: FaqAnswer }[]; paid: boolean }) {
+  const [open, setOpen] = useState(0);
   return (
     <div className="divide-y divide-gosi-midnight-10 overflow-hidden rounded-[20px] bg-white">
-      {items.map((item) => (
-        <button key={item.q} type="button" className="block w-full px-4 py-3 text-left" onClick={() => setOpen(open === item.q ? null : item.q)}>
-          <p className="text-[15px] font-semibold text-gosi-rich-blue">{item.q}</p>
-          {open === item.q && <p className="mt-1 text-[13px] text-gosi-midnight-50">{item.a}</p>}
-        </button>
-      ))}
+      {items.map((item, index) => {
+        const isOpen = open === index;
+        const answer = typeof item.a === "string" ? item.a : paid ? item.a.on : item.a.off;
+        return (
+          <div key={item.q} className="p-4">
+            <button type="button" className="flex w-full items-start gap-3 text-left" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : index)}>
+              <span className="flex-1 text-[15px] font-semibold leading-[22px] text-gosi-rich-blue">{item.q}</span>
+              <ChevronDown className={`mt-0.5 shrink-0 text-gosi-rich-blue transition-transform ${isOpen ? "rotate-180" : ""}`} size={20} strokeWidth={1.75} aria-hidden />
+            </button>
+            {isOpen && <p className="pt-2 text-[15px] font-normal leading-[22px] text-gosi-midnight-50">{answer}</p>}
+          </div>
+        );
+      })}
     </div>
   );
 }

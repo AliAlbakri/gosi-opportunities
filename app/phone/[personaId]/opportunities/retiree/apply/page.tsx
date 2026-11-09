@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Wizard } from "@/components/phone/wizard";
-import { applicationBundle } from "@/lib/domain/applications";
+import { applicationBundle, signedDocumentUrl } from "@/lib/domain/applications";
 import { getInvitation, markInvitationOpened } from "@/lib/domain/invitations";
 import { requireUser } from "@/lib/domain/personas";
 
@@ -13,6 +13,10 @@ export default async function ApplyPage({ params }: { params: Promise<{ personaI
   await markInvitationOpened(user.person.id);
   const bundle = await applicationBundle(user.person.id);
   if (!bundle.person) notFound();
+  let photoUrl: string | null = null;
+  if (bundle.profile?.photo_path) {
+    try { photoUrl = await signedDocumentUrl(bundle.profile.photo_path); } catch { photoUrl = null; }
+  }
   return (
     <Wizard
       personaId={personaId}
@@ -26,6 +30,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ personaI
       }}
       jobs={bundle.jobs.map((job) => ({ id: job.id, employer: job.employer, sector: job.sector, start_date: job.start_date, end_date: job.end_date }))}
       documents={bundle.documents.map((doc) => ({ id: doc.id, kind: doc.kind, file_name: doc.file_name }))}
+      photoUrl={photoUrl}
       initial={{
         showEmployers: bundle.profile?.show_employers ?? true,
         showDates: bundle.profile?.show_dates ?? true,

@@ -99,15 +99,16 @@ Hero copy for an invited retiree: Learn more (no profile), Continue (draft), Vie
 
 ## 4. Retiree journey (phone)
 
-Routes under `/phone/[id]/opportunities/retiree/...`. Header: back chevron, title, small "GOSI Opportunities" label.
+Routes under `/phone/[id]/opportunities/retiree/...`. Header: back chevron, title, small "GOSI Opportunities" label. **About the programme** (`/retiree/about`, also the invited landing) ends with the retiree FAQ. Answers marked for paid sessions follow the paid switch.
 
 ### 4.1 Application (stages 1–4)
 A 5-step wizard with a step indicator, autosaved as **Draft** (`retiree_profiles.state = draft`) after every field change. Leaving and returning resumes at the last step.
-1. **Your GOSI record** (Layer 1, read-only): name, confirmed retiree status, pension system, years of experience (sum of employment), year last active, and each employer with its dates and sector, each on its own line. A short note says the name, retiree status, years, and year last active are always public. Toggles, each with a one-line explanation: "Show employers" (workplace names), "Show dates" (years at each place), "Show sector" (the GOSI sector). A live "What seekers will see" card updates as the toggles change. The review step repeats that card plus the role, introduction, languages, and Service Types. Badge "Verified by GOSI".
-2. **Your professional background** (Layer 2, self-declared): "What was your job?" (required) and "A short introduction" (optional). No free-text specializations field. Placeholders show an example. Two buttons, Teacher and Accountant, fill the empty fields so the retiree can edit them. Languages: Arabic and English first, the rest behind "More languages"; at least one required.
-3. **Documents**: upload certificates (multiple) and CV (one), PDF/JPG/PNG up to 10 MB, Supabase Storage bucket `retiree-docs` (private, server signed URLs for viewing). Optional.
-4. **What you'll offer**: the Service Type list is the specialization. Pick a Category, then one or more Service Types (fixed list from DB; the retiree never types the name). Seekers see those names as chips. For each selected Service Type: required description (min 80 chars, max 800) with the PRD example as placeholder. The description is the only free text, and an operator reads it before it is published. Can add Service Types from both Categories.
-5. **Review and submit**: summary of everything, T&C sheet ("I agree to the GOSI Opportunities terms and conditions", scrollable placeholder T&C text; checkbox required), **Submit for review**.
+The wizard uses `WizardLayout` (full-width sticky header, 5-segment progress, sticky Back/Continue). Each step is a title plus one subtitle. Detail sits behind ⓘ sheets or one-line helpers. Switches are used for on/off settings. See UX-OVERHAUL §4.3.
+1. **Your GOSI record**: verified card (identity, stat chips, employment timeline) and one card of three switches for employers, dates, and sector. Preview opens in a sheet.
+2. **Your background**: optional photo, required role, required language chips, optional introduction (500) and specialization chips.
+3. **Documents**: optional CV (one) and certificates (many), PDF/JPG/PNG up to 10 MB, bucket `retiree-docs`. Continue says "Skip for now" when nothing is uploaded.
+4. **What you'll offer**: both categories can be selected. Each chosen Service Type needs a description of 80–800 characters. Seekers see the Service Type name.
+5. **Review and submit**: summary cards with Edit, then a terms sheet. "I agree" enables when the end of the terms is in view. **Submit for review**. Success: "Application submitted", then View status or Back to home.
 
 On submit: `state = pending_review`, every RST `status = pending`, `terms_accepted_at`, `submitted_at`, audit log, notifications (retiree: "Application submitted"; all operators: "New application to review").
 
@@ -145,6 +146,7 @@ Routes under `/phone/[id]/opportunities/...`.
 - Category cards (Education and Training, Accounting and Finance, with Arabic names as secondary) → Service Type list → retiree list.
 - Retiree card: avatar initials circle, name, discipline, "Verified by GOSI" mini badge, years of experience, languages, rating ("4.6 ★ · 12 sessions") or "New on GOSI Opportunities", price chip ("Free" or "SAR 150"), **next available slot** ("Next: Tue 11 Nov, 18:00"). Retirees with no free slot in the 30-day window stay listed with "Fully booked for now" (PRD: stay visible so seekers see supply exists). Retirees with `accepting_bookings=false`, `paused`, or an incomplete go-live checklist are not listed.
 - Under-18: blocked screen.
+- Bottom of the home: **Questions**, the seeker FAQ. Paid answers follow the paid switch.
 
 ### 5.2 Retiree profile
 Two clearly separated blocks:

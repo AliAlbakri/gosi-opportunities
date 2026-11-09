@@ -167,6 +167,25 @@ export async function uploadDocument(personId: string, kind: "cv" | "certificate
   return { ok: true as const };
 }
 
+export async function uploadPhoto(personId: string, file: File) {
+  await ensureDraft(personId);
+  if (!file || file.size === 0) return { ok: false as const, error: "Choose a photo." };
+  if (file.size > 10 * 1024 * 1024) return { ok: false as const, error: "Photos must be 10 MB or smaller." };
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const contentType = fileTypes[extension] ?? (file.type === "image/jpg" ? "image/jpeg" : file.type);
+  if (contentType !== "image/jpeg" && contentType !== "image/png") return { ok: false as const, error: "Use a JPG or PNG photo." };
+  const profile = await getProfile(personId);
+  if (profile?.photo_path) await admin().storage.from("retiree-docs").remove([profile.photo_path]);
+  const path = `${personId}/photo/${crypto.randomUUID()}.${extension || "jpg"}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const { error: upError } = await admin().storage.from("retiree-docs").upload(path, bytes, { contentType, upsert: false });
+  if (upError) return { ok: false as const, error: upError.message };
+  const { error } = await admin().from("retiree_profiles").update({ photo_path: path }).eq("person_id", personId);
+  if (error) return { ok: false as const, error: error.message };
+  const url = await signedDocumentUrl(path);
+  return { ok: true as const, url };
+}
+
 export async function removeDocument(personId: string, documentId: string) {
   const { data } = await admin().from("retiree_documents").select("*").eq("id", documentId).eq("person_id", personId).maybeSingle();
   if (!data) return;

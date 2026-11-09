@@ -5,19 +5,11 @@ import { BrandIcon } from "@/components/phone/brand-icon";
 import { Card } from "@/components/phone/ui/bits";
 import { StickyFooter } from "@/components/phone/ui/buttons";
 import { FaqList, Timeline } from "@/components/phone/ui/flow";
+import { copy } from "@/lib/copy";
 import { getInvitation } from "@/lib/domain/invitations";
 import { requireUser } from "@/lib/domain/personas";
 import { catalog } from "@/lib/domain/discovery";
 import { coverFor } from "@/lib/phone-icons";
-
-const faqs = [
-  { q: "What is GOSI Opportunities?", a: "A place in the GOSI app where invited retirees give one-hour video sessions." },
-  { q: "Who can book my sessions?", a: "GOSI app users aged 18 and over." },
-  { q: "How long does review take?", a: "GOSI reviews each service and notifies you in the app." },
-  { q: "What do seekers see about me?", a: "Your GOSI record, if you choose to show it, and the background you write. GOSI reviews the background before it is published." },
-  { q: "Can I stop or pause?", a: "You can pause new bookings at any time. Confirmed sessions stay." },
-  { q: "Are sessions recorded?", a: "No." },
-];
 
 export default async function AboutPage({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
@@ -25,7 +17,7 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
   if (!user?.person.is_retiree) notFound();
   const invitation = await getInvitation(user.person.id);
   if (!invitation) notFound();
-  const { categories, serviceTypes } = await catalog();
+  const { categories, serviceTypes, paidEnabled } = await catalog();
   return (
     <div className="pb-28 text-gosi-rich-blue">
       <div className="bg-gosi-rich-blue px-5 pb-8 text-white">
@@ -86,7 +78,7 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
         </section>
         <section>
           <h2 className="mb-3 text-lg font-semibold">FAQ</h2>
-          <FaqList items={faqs} />
+          <FaqList items={copy.faq.retiree} paid={paidEnabled} />
         </section>
       </div>
       <StickyFooter>

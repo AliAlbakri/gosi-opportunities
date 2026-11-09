@@ -147,13 +147,23 @@ Shown on first tap and always reachable from the dashboard ("About the programme
 8. `StickyFooter`: **Start my application** (primary) + "Not now" (text).
 
 ### 4.3 Application wizard (redesign)
-Full-screen flow, `AppHeader` title "Your application" with a close (X) that confirms "Your progress is saved". Top `Stepper` with step names: 1 GOSI record · 2 Background · 3 Documents · 4 Services · 5 Review. A subtle "Saved" indicator after autosave. `StickyFooter` with Back + Continue (Continue disabled until required fields pass; inline errors on blur).
-1. **Your GOSI record**: verified card (Rich Blue header with `VerifiedBadge`): name, retiree status, pension system, years of experience, last active year, employment timeline (employer, sector, dates). Three toggles "Show on my profile: employers / dates / sector" with a **live preview** card "How seekers will see this".
-2. **Your background**: optional **profile photo** (UploadTile with circular preview, fallback monogram), Professional discipline and role (required, example placeholder "Secondary school English teacher, 25 years"), Specializations, Personal introduction (counter, tip "Write as if introducing yourself to a new student"), Languages (selectable chips, ≥1). Label: "Self-declared. GOSI reviews this before it's published."
-3. **Documents**: two `UploadTile`s (Certificates: multiple; CV: one), file rows with type icon, size, remove, upload progress; note "Optional, but helps GOSI review faster".
-4. **What you'll offer**: two category cards with cover art (select one or both) → Service Type cards with checkbox; checking expands a description textarea (80–800 chars, counter, example from PRD, tip "Explain what a seeker will get from one hour with you").
-5. **Review and submit**: summary sections with "Edit" links back to each step; T&C in a `BottomSheet` that must be scrolled to the end before "I agree" enables; **Submit for review**.
-**Success screen**: illustration, "Application submitted", "What happens next" mini timeline (review → notification → get ready), **Back to home** and **View status**.
+Shared `WizardLayout` on steps 1–5. Copy lives in `lib/copy.ts` (`wizard`).
+
+Every step: Title 22px plus one subtitle (about 12 words). No intro paragraphs. Extra explanation sits behind an ⓘ button that opens a `BottomSheet`. Field help is one line under the field. Facts are labelled rows, stat chips, or a timeline, never "A · B · C" sentences. On/off settings are GOSI green switches, grouped as rows in one card with dividers. Native checkboxes are not used. A custom check is only for agreements and multi-select lists. One card per group. Form fields sit on the page: label, input, helper. Optional fields carry an "Optional" chip beside the label. The main decision fits above the fold at 390×844.
+
+`WizardLayout`:
+- Full-bleed sticky header: close X (sheet: "Your progress is saved"), centred "Your application", "Saved" with a green check that fades in after a save.
+- 5 segments under the header (4px, gap 4). Done and current are green. Upcoming is Midnight 25%. "Step 1 of 5" on the left (Micro, secondary) and the step name on the right.
+- `StickyFooter`: Back (secondary, from step 2) and Continue (primary, full width on step 1). Continue looks disabled until the step is valid. Tapping it then scrolls to and highlights the first invalid field.
+- Content padding 20px, 24px between groups, extra bottom padding so the footer does not cover content.
+
+1. **Your GOSI record** — "Already verified. Choose what seekers see." Record card with a Rich Blue header (shield, "Verified by GOSI", ⓘ). Identity row: 48px monogram, name, "Confirmed retiree" pill. Stat chips: years, last active year, pension. Employment timeline, most recent first: dot, employer, sector chip, date caption. One "Show on your profile" card with three switches (Employers, Dates, Sector) and a lock footer for what is always shown. "Preview your profile" opens a sheet that follows the switches.
+2. **Your background** — "Tell seekers who you are." Optional photo (88px, camera badge, monogram fallback). Professional role (required). Language chips (required, multi). Introduction (optional, 500). Specializations (optional chips, type and Enter). One-line "Self-declared" note with ⓘ.
+3. **Documents** — "Optional, but helps GOSI review faster." Two dashed upload tiles: CV (one) and certificates (many). File rows show a type icon, name, size, progress, and remove. With nothing uploaded, Continue reads "Skip for now".
+4. **What you'll offer** — "Pick the services you want to give." Two category cards side by side, both selectable, green ring when on. Service Type cards under a selected category: icon, name, round check. Selecting expands a description (80–800, counter turns green at 80), "See an example", and a one-line helper. Footer shows how many services are selected.
+5. **Review and submit** — "Check everything before sending." Collapsible summary cards with Edit (jumps to that step; Continue returns here). Terms row opens a full-height sheet. "I agree" enables after the end is in view. The row then shows "Agreed". Submit stays inactive until then.
+
+**Success screen**: no progress header. Illustration, "Application submitted", one line that GOSI will notify them in the app, mini timeline Review → Notification → Get ready, **View status** (primary) and **Back to home** (text).
 
 ### 4.4 Application status tracker
 `Timeline`: Submitted ✓ → Under review (current) → Get ready → Live. Below, per Service Type rows with `StatusPill`. Not approved rows show a callout with the reason text and operator note and an **Edit and resubmit** button that opens that service's description inline. "Add another service" link.

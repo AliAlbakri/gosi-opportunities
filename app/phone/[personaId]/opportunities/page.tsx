@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AppHeader } from "@/components/phone/ui/header";
 import { BrandIcon } from "@/components/phone/brand-icon";
 import { EmptyState } from "@/components/phone/ui/bits";
+import { FaqList } from "@/components/phone/ui/flow";
 import { RetireeCard } from "@/components/phone/retiree-card";
 import { copy } from "@/lib/copy";
 import { getAppNow } from "@/lib/domain/clock";
@@ -22,7 +23,7 @@ export default async function BrowsePage({ params, searchParams }: { params: Pro
   if (ageInRiyadh(user.person.birth_date, appNow) < 18) {
     return <div className="p-6"><AppHeader title="GOSI Opportunities" /><h1 className="mt-4 text-2xl font-semibold text-gosi-rich-blue">{copy.under18}</h1></div>;
   }
-  const { categories, serviceTypes } = await catalog();
+  const { categories, serviceTypes, paidEnabled } = await catalog();
   const { cards } = await listRetireeCards({ q: query.q, language: query.language });
   const { data: nextBooking } = await admin().from("bookings").select("id, starts_at, retiree_id").eq("seeker_id", user.person.id).eq("status", "confirmed").gt("starts_at", appNow.toISOString()).order("starts_at").limit(1).maybeSingle();
   const counted = await Promise.all(categories.map(async (category) => {
@@ -106,6 +107,12 @@ export default async function BrowsePage({ params, searchParams }: { params: Pro
           </section>
         ))}
         <p className="flex gap-2 text-[13px] text-gosi-midnight-50"><BrandIcon name="security" className="h-5 w-5" /> Every retiree is verified through GOSI records. Sessions are guidance based on professional experience, not a licensed professional service.</p>
+        <section>
+          <h2 className="text-lg font-semibold">Questions</h2>
+          <div className="mt-3">
+            <FaqList items={copy.faq.seeker} paid={paidEnabled} />
+          </div>
+        </section>
       </div>
     </div>
   );

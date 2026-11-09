@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { addServiceType, removeDocument, resubmit, saveApplication, submitApplication, updateLayer2, uploadDocument } from "@/lib/domain/applications";
+import { addServiceType, removeDocument, resubmit, saveApplication, submitApplication, updateLayer2, uploadDocument, uploadPhoto } from "@/lib/domain/applications";
 import { markOnboardingWatched, markReadiness, replaceWindows, setAcceptingBookings } from "@/lib/domain/availability";
 import { cancelBooking, createBooking, expireHold, payBooking } from "@/lib/domain/bookings";
 import { saveFeedback } from "@/lib/domain/feedback";
@@ -96,6 +96,14 @@ export async function uploadAction(personId: string, kind: "cv" | "certificate",
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false as const, error: "Choose a file." };
   const result = await uploadDocument(personId, kind, file);
+  done();
+  return result;
+}
+
+export async function uploadPhotoAction(personId: string, formData: FormData) {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false as const, error: "Choose a photo." };
+  const result = await uploadPhoto(personId, file);
   done();
   return result;
 }

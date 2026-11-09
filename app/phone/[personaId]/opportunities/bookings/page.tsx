@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CancelButton } from "@/components/phone/cancel-button";
+import { AppHeader } from "@/components/phone/ui/header";
 import { bookingsForPerson } from "@/lib/domain/bookings";
 import { getAppNow } from "@/lib/domain/clock";
 import { decorateBookings } from "@/lib/domain/hydrate";
@@ -32,7 +33,7 @@ export default async function BookingsPage({ params }: { params: Promise<{ perso
         </Link>
         <div className="mt-2 flex flex-wrap gap-3 text-sm">
           {canJoin && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/call`}>{copy.join}</Link>}
-          {canCancel && <CancelButton bookingId={row.id} personId={user.person.id} personaId={personaId} party={seeker ? "seeker" : "retiree"} />}
+          {canCancel && <CancelButton bookingId={row.id} personId={user.person.id} personaId={personaId} party={seeker ? "seeker" : "retiree"} late={start - appNow.getTime() < 3 * 60 * 60 * 1000} />}
           {past && seeker && row.status === "completed" && !row.rated && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/feedback`}>Rate session</Link>}
           {past && seeker && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/report`}>Report a problem</Link>}
           {past && seeker && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/p/${row.retiree_id}`}>Book again</Link>}
@@ -41,8 +42,8 @@ export default async function BookingsPage({ params }: { params: Promise<{ perso
     );
   };
   return (
-    <div className="space-y-3 p-4 text-gosi-rich-blue">
-      <h1 className="text-2xl font-medium">My bookings</h1>
+    <div className="space-y-3 px-5 py-2 text-gosi-rich-blue">
+      <AppHeader title="My bookings" />
       <h2>Upcoming</h2>
       {upcoming.map((row) => <Card key={row.id} row={row} />)}
       {!upcoming.length && <p>No upcoming sessions.</p>}

@@ -19,9 +19,8 @@ export default async function BookPage({ params, searchParams }: { params: Promi
   const services = profile.services.map((service) => ({
     id: service.id,
     name: service.serviceType?.name ?? "Session",
+    description: service.description,
     priceLabel: profile.paidEnabled && service.pricing_mode === "paid" ? money(service.price) : "Free",
   }));
-  const selected = profile.services.find((service) => service.id === query.rst) ?? profile.services[0];
-  const paid = Boolean(profile.paidEnabled && selected?.pricing_mode === "paid");
-  return <BookForm personaId={personaId} seekerId={user.person.id} birthDate={user.person.birth_date} retireeId={retireeId} services={services} slots={slots.map((slot) => slot.toISOString())} paid={paid} />;
+  return <BookForm personaId={personaId} seekerId={user.person.id} birthDate={user.person.birth_date} retireeId={retireeId} retireeName={profile.person.full_name} services={services} slots={slots.map((slot) => slot.toISOString())} initialService={query.rst} />;
 }

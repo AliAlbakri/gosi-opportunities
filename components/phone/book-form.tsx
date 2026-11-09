@@ -1,78 +1,136 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bookAction } from "@/app/actions/flow";
-import { Button } from "@/components/ui/button";
-import { Field, TextArea } from "@/components/ui/fields";
+import { AppHeader } from "@/components/phone/ui/header";
+import { PrimaryButton, StickyFooter } from "@/components/phone/ui/buttons";
+import { Stepper } from "@/components/phone/ui/flow";
+import { DayStrip, SlotGrid } from "@/components/phone/ui/schedule";
 import { copy } from "@/lib/copy";
 import { formatClock, formatDay } from "@/lib/format";
+
+function downloadIcs(title: string, startIso: string) {
+  const start = new Date(startIso);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const body = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:${stamp(start)}\nDTEND:${stamp(end)}\nSUMMARY:${title}\nEND:VEVENT\nEND:VCALENDAR`;
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([body], { type: "text/calendar" }));
+  link.download = "gosi-session.ics";
+  link.click();
+}
 
 export function BookForm({
   personaId,
   seekerId,
   birthDate,
   retireeId,
+  retireeName,
   services,
   slots,
-  paid,
+  initialService,
 }: {
   personaId: string;
   seekerId: string;
   birthDate: string;
   retireeId: string;
-  services: { id: string; name: string; priceLabel: string }[];
+  retireeName: string;
+  services: { id: string; name: string; priceLabel: string; description: string }[];
   slots: string[];
-  paid: boolean;
+  initialService?: string;
 }) {
-  const [rst, setRst] = useState(services[0]?.id ?? "");
+  const router = useRouter();
+  const [step, setStep] = useState(services.length > 1 && !initialService ? 1 : 2);
+  const [rst, setRst] = useState(initialService ?? services[0]?.id ?? "");
   const [slot, setSlot] = useState(slots[0] ?? "");
-  const days = [...slots.reduce((map, item) => {
-    const day = formatDay(item);
-    map.set(day, [...(map.get(day) ?? []), item]);
-    return map;
-  }, new Map<string, string[]>())];
-  const activeDay = days.find(([, hours]) => hours.includes(slot))?.[0] ?? days[0]?.[0] ?? "";
-  const hours = days.find(([day]) => day === activeDay)?.[1] ?? [];
   const [need, setNeed] = useState("");
   const [goal, setGoal] = useState("");
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [booked, setBooked] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const router = useRouter();
+  const service = services.find((row) => row.id === rst) ?? services[0];
+  const days = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const item of slots) {
+      const key = formatDay(item);
+      map.set(key, [...(map.get(key) ?? []), item]);
+    }
+    return [...map.entries()].map(([key, items]) => ({ key, label: key.split(" ")[0] ?? key, date: key.split(" ")[1] ?? "", items }));
+  }, [slots]);
+  const [day, setDay] = useState(days[0]?.key ?? "");
+  const hours = days.find((row) => row.key === day)?.items ?? [];
+  const groups = [
+    { title: "Morning", slots: hours.filter((item) => Number(formatClock(item).slice(0, 2)) < 12).map((item) => ({ id: item, label: `${formatClock(item)}–${formatClock(new Date(new Date(item).getTime() + 3600000))}` })) },
+    { title: "Afternoon", slots: hours.filter((item) => { const hour = Number(formatClock(item).slice(0, 2)); return hour >= 12 && hour < 17; }).map((item) => ({ id: item, label: `${formatClock(item)}–${formatClock(new Date(new Date(item).getTime() + 3600000))}` })) },
+    { title: "Evening", slots: hours.filter((item) => Number(formatClock(item).slice(0, 2)) >= 17).map((item) => ({ id: item, label: `${formatClock(item)}–${formatClock(new Date(new Date(item).getTime() + 3600000))}` })) },
+  ].filter((group) => group.slots.length);
+  const labels = ["Service", "Date and time", "Your needs", "Review and confirm"];
+
+  if (booked) {
+    return (
+      <div className="space-y-4 p-5 text-gosi-rich-blue">
+        <h1 className="text-[28px] font-bold">You're booked</h1>
+        <p>{retireeName} · {service?.name}</p>
+        <p>Find a quiet place, test your camera, and join from My bookings 10 minutes before.</p>
+        <PrimaryButton onClick={() => downloadIcs(service?.name ?? "GOSI session", booked)}>Add to calendar</PrimaryButton>
+        <PrimaryButton onClick={() => router.push(`/phone/${personaId}/opportunities/bookings`)}>View my bookings</PrimaryButton>
+      </div>
+    );
+  }
+
   return (
-    <form className="space-y-3 p-4 text-gosi-rich-blue" onSubmit={(event) => {
-      event.preventDefault();
-      start(async () => {
-        const result = await bookAction({ personaId, seekerId, birthDate, retireeId, retireeServiceTypeId: rst, startsAt: slot, need, goal, terms });
-        if (!result.ok) setError(result.error);
-        else if ("booking" in result && result.paid) router.push(`/phone/${personaId}/opportunities/bookings/${result.booking.id}/pay`);
-        else if ("booking" in result) router.push(`/phone/${personaId}/opportunities/bookings/${result.booking.id}`);
-      });
-    }}>
-      <Field label="Service Type">
-        <select className="h-11 w-full rounded-2xl border px-3" value={rst} onChange={(e) => setRst(e.target.value)}>
-          {services.map((service) => <option key={service.id} value={service.id}>{service.name} · {service.priceLabel}</option>)}
-        </select>
-      </Field>
-      <div className="flex gap-2 overflow-x-auto">
-        {days.map(([day, items]) => (
-          <button type="button" key={day} className={`shrink-0 rounded-2xl px-3 py-2 ${day === activeDay ? "bg-gosi-green-10" : "bg-white"}`} onClick={() => setSlot(items[0])}>{day}</button>
+    <div className="flex min-h-full flex-col text-gosi-rich-blue">
+      <AppHeader title="Book a session" />
+      <div className="space-y-4 px-5 pb-28">
+        <Stepper step={step} total={4} label={labels[step - 1]} />
+        <p className="text-[13px] text-gosi-midnight-50">{retireeName} · {service?.name}</p>
+        {step === 1 && services.map((row) => (
+          <button key={row.id} type="button" className={`block w-full rounded-[20px] p-4 text-left ${rst === row.id ? "bg-gosi-green-10" : "bg-white"}`} onClick={() => setRst(row.id)}>
+            <p className="font-semibold">{row.name}</p>
+            <p className="text-[13px]">{row.priceLabel}</p>
+          </button>
         ))}
+        {step === 2 && (
+          <>
+            <DayStrip days={days.map((row) => ({ key: row.key, label: row.label, date: row.date, open: true }))} selected={day} onSelect={(key) => { setDay(key); const first = days.find((row) => row.key === key)?.items[0]; if (first) setSlot(first); }} />
+            <SlotGrid groups={groups} selected={slot} onSelect={setSlot} />
+            {!slots.length && <p>Fully booked for now</p>}
+            <p className="text-[13px] text-gosi-midnight-50">All times are Riyadh time. Book at least 24 hours ahead, up to 30 days.</p>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <label className="block text-[15px] font-semibold">What do you need help with?<textarea className="mt-1 h-24 w-full rounded-2xl border p-3 font-normal" value={need} onChange={(event) => setNeed(event.target.value)} /></label>
+            <label className="block text-[15px] font-semibold">What do you want out of the session?<textarea className="mt-1 h-24 w-full rounded-2xl border p-3 font-normal" value={goal} onChange={(event) => setGoal(event.target.value)} /></label>
+          </>
+        )}
+        {step === 4 && (
+          <div className="rounded-[20px] bg-white p-4 text-[15px]">
+            <p className="font-semibold">{retireeName}</p>
+            <p>{service?.name}</p>
+            <p>{slot ? `${formatClock(slot)} · 1 hour · ${service?.priceLabel}` : ""}</p>
+            <p className="mt-2 text-[13px] text-gosi-midnight-50">Cancellation is free up to 3 hours before. {copy.disclaimer}</p>
+            <label className="mt-3 flex min-h-11 items-center gap-2"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} />{copy.termsLabel}</label>
+          </div>
+        )}
+        {error && <p className="text-[15px]">{error}</p>}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {hours.map((item) => (
-          <button type="button" key={item} className={`rounded-full px-3 py-2 ${item === slot ? "bg-gosi-vivid-green" : "bg-white"}`} onClick={() => setSlot(item)}>{formatClock(item)}</button>
-        ))}
-      </div>
-      {!slots.length && <p>{copy.fullyBooked}</p>}
-      <Field label="What do you need help with?"><TextArea value={need} onChange={(e) => setNeed(e.target.value)} /></Field>
-      <Field label="What do you want out of the session?"><TextArea value={goal} onChange={(e) => setGoal(e.target.value)} /></Field>
-      <p className="text-sm">{copy.disclaimer}</p>
-      <div className="max-h-24 overflow-y-auto text-xs">{copy.termsBody}</div>
-      <label className="flex gap-2 text-sm"><input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} />{copy.termsLabel}</label>
-      {error && <p>{error}</p>}
-      <Button disabled={pending || !slot}>{paid ? copy.continuePay : copy.confirmBooking}</Button>
-    </form>
+      <StickyFooter>
+        <div className="flex gap-2">
+          {step > 1 && <button type="button" className="h-[52px] flex-1 rounded-full border" onClick={() => setStep(step - 1)}>Back</button>}
+          <PrimaryButton className="flex-1" disabled={pending || (step === 2 && !slot) || (step === 3 && (!need.trim() || !goal.trim())) || (step === 4 && !terms)} onClick={() => {
+            if (step < 4) { setStep(step + 1); return; }
+            start(async () => {
+              const result = await bookAction({ personaId, seekerId, birthDate, retireeId, retireeServiceTypeId: rst, startsAt: slot, need, goal, terms });
+              if (!result.ok) { setError(result.error === copy.slotTaken ? "That time was just booked. Please pick another." : result.error); if (result.error === copy.slotTaken) setStep(2); return; }
+              if ("booking" in result && result.paid) router.push(`/phone/${personaId}/opportunities/bookings/${result.booking.id}/pay`);
+              else if ("booking" in result) setBooked(slot);
+            });
+          }}>{step < 4 ? "Continue" : service?.priceLabel === "Free" ? "Confirm booking" : "Continue to payment"}</PrimaryButton>
+        </div>
+      </StickyFooter>
+    </div>
   );
 }

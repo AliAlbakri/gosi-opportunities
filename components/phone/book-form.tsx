@@ -74,7 +74,7 @@ export function BookForm({
   if (booked) {
     return (
       <div className="space-y-4 p-5 text-gosi-rich-blue">
-        <h1 className="text-[28px] font-bold">You're booked</h1>
+        <h1 className="text-[28px] font-bold">You’re booked</h1>
         <p>{retireeName} · {service?.name}</p>
         <p>Find a quiet place, test your camera, and join from My bookings 10 minutes before.</p>
         <PrimaryButton onClick={() => downloadIcs(service?.name ?? "GOSI session", booked)}>Add to calendar</PrimaryButton>

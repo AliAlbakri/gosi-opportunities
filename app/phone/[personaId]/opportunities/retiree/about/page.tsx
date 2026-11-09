@@ -30,9 +30,9 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
     <div className="pb-28 text-gosi-rich-blue">
       <div className="bg-gosi-rich-blue px-5 pb-8 text-white">
         <AppHeader transparent />
-        <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold">You're invited</span>
+        <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold">You’re invited</span>
         <h1 className="mt-4 text-[28px] font-bold leading-9">Your experience still matters</h1>
-        <p className="mt-2 text-[15px] leading-6 text-white/80">GOSI Opportunities lets you share what you've learned in your career through one-hour video sessions in the GOSI app.</p>
+        <p className="mt-2 text-[15px] leading-6 text-white/80">GOSI Opportunities lets you share what you’ve learned in your career through one-hour video sessions in the GOSI app.</p>
       </div>
       <div className="space-y-8 px-5 py-6">
         <section>
@@ -51,7 +51,7 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
           </div>
         </section>
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Who it's for in this phase</h2>
+          <h2 className="mb-3 text-lg font-semibold">Who it’s for in this phase</h2>
           <div className="grid gap-3">
             {categories.map((category) => (
               <div key={category.id} className="overflow-hidden rounded-[20px] bg-gosi-rich-blue text-white">
@@ -77,7 +77,7 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
           ]} /></Card>
         </section>
         <section>
-          <h2 className="mb-3 text-lg font-semibold">What you'll need</h2>
+          <h2 className="mb-3 text-lg font-semibold">What you’ll need</h2>
           <Card><ul className="list-disc space-y-1 pl-4 text-[15px]"><li>Your GOSI record, which is already here</li><li>A short description of each service</li><li>Certificates or a CV, if you have them</li><li>A phone with a camera and internet</li></ul></Card>
         </section>
         <section>

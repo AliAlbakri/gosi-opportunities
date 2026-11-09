@@ -28,7 +28,29 @@ export function formatMonthKey(date: Date | string) {
 }
 
 export function formatReviewMonth(date: Date | string) {
-  return formatInTimeZone(new Date(date), TZ, "MMMM");
+  return formatInTimeZone(new Date(date), TZ, "MMMM yyyy");
+}
+
+export function formatSpan(start: string, end: string | null) {
+  const label = (value: string) => {
+    const [year, month] = value.slice(0, 10).split("-").map(Number);
+    return formatInTimeZone(new Date(Date.UTC(year, month - 1, 15)), TZ, "MMM yyyy");
+  };
+  return end ? `${label(start)} – ${label(end)}` : label(start);
+}
+
+export function relativeDay(date: Date | string, appNow: Date) {
+  const day = formatInTimeZone(new Date(date), TZ, "yyyy-MM-dd");
+  const today = formatInTimeZone(appNow, TZ, "yyyy-MM-dd");
+  const tomorrow = formatInTimeZone(addRiyadhDays(appNow, 1), TZ, "yyyy-MM-dd");
+  const time = formatClock(date);
+  if (day === today) return `Today, ${time}`;
+  if (day === tomorrow) return `Tomorrow, ${time}`;
+  return formatWhen(date);
+}
+
+export function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 export function money(amount: number | string | null | undefined) {

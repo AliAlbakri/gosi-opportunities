@@ -88,6 +88,7 @@ export type RetireeProfile = {
   discipline_role: string | null;
   specializations: string | null;
   intro: string | null;
+  photo_path: string | null;
   languages: string[];
   terms_accepted_at: string | null;
   submitted_at: string | null;

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { resetDataAction, testNotificationAction } from "@/app/actions/demo";
+import { IphoneFrame } from "@/components/phone/iphone-frame";
 import { copy } from "@/lib/copy";
 
 type Option = { id: string; display_name: string; blurb: string | null };
@@ -84,13 +85,13 @@ function PhoneColumn({ title, value, options, onChange }: { title: string; value
           ))}
         </select>
       </div>
-      <div className="mx-auto w-[390px] rounded-[44px] border-[10px] border-black bg-black">
+      <IphoneFrame>
         {value ? (
-          <iframe title={title} src={`/phone/${value}/home`} className="h-[844px] w-[390px] bg-white" allow="camera; microphone; display-capture; autoplay" />
+          <iframe title={title} src={`/phone/${value}/home`} className="block h-[844px] w-[390px] border-0 bg-white" allow="camera; microphone; display-capture; autoplay" />
         ) : (
           <div className="grid h-[844px] place-items-center bg-white text-sm">Reset demo data to load personas.</div>
         )}
-      </div>
+      </IphoneFrame>
     </section>
   );
 }

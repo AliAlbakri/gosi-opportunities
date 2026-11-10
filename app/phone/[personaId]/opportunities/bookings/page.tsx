@@ -17,7 +17,9 @@ export default async function BookingsPage({ params }: { params: Promise<{ perso
   if (!user) notFound();
   const appNow = await getAppNow();
   const rows = await decorateBookings(await bookingsForPerson(user.person.id));
-  const upcoming = rows.filter((row) => ["confirmed", "pending_payment"].includes(row.status) && new Date(row.starts_at) >= appNow);
+  const upcoming = rows
+    .filter((row) => ["confirmed", "pending_payment"].includes(row.status) && new Date(row.starts_at) >= appNow)
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const past = rows.filter((row) => !upcoming.includes(row));
   const seeker = !user.person.is_retiree;
   return (

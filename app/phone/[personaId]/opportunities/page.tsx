@@ -1,21 +1,27 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AppHeader } from "@/components/phone/ui/header";
-import { BrandIcon } from "@/components/phone/brand-icon";
-import { EmptyState } from "@/components/phone/ui/bits";
-import { FaqList } from "@/components/phone/ui/flow";
+import { AccountingIllustration, EducationIllustration, VerifiedIllustration } from "@/components/illustrations/spots";
+import { HowItWorks } from "@/components/phone/seeker/how-it-works";
+import { SeeAll } from "@/components/phone/seeker/retiree-rows";
 import { RetireeCard } from "@/components/phone/retiree-card";
+import { BrandIcon } from "@/components/phone/brand-icon";
+import { AppHeader } from "@/components/phone/ui/header";
+import { Avatar, DateBlock } from "@/components/phone/ui/bits";
+import { InfoButton } from "@/components/phone/wizard-layout";
+import { FaqList } from "@/components/phone/ui/flow";
 import { copy } from "@/lib/copy";
 import { getAppNow } from "@/lib/domain/clock";
 import { catalog, listRetireeCards } from "@/lib/domain/discovery";
+import { decorateBookings } from "@/lib/domain/hydrate";
 import { requireUser } from "@/lib/domain/personas";
-import { ageInRiyadh, formatWhen } from "@/lib/format";
-import { coverFor, serviceIcons } from "@/lib/phone-icons";
+import { DAY_MS } from "@/lib/domain/rules";
+import { ageInRiyadh, countLabel, formatClock, relativeTo } from "@/lib/format";
+import { serviceIcons } from "@/lib/phone-icons";
 import { admin } from "@/lib/supabase/admin";
+import type { Booking } from "@/lib/types";
 
-export default async function BrowsePage({ params, searchParams }: { params: Promise<{ personaId: string }>; searchParams: Promise<{ q?: string; language?: string }> }) {
+export default async function BrowsePage({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
-  const query = await searchParams;
   const user = await requireUser(personaId);
   if (!user) notFound();
   if (user.person.is_retiree) redirect(`/phone/${personaId}/opportunities/retiree`);
@@ -23,95 +29,110 @@ export default async function BrowsePage({ params, searchParams }: { params: Pro
   if (ageInRiyadh(user.person.birth_date, appNow) < 18) {
     return <div className="p-6"><AppHeader title="GOSI Opportunities" /><h1 className="mt-4 text-2xl font-semibold text-gosi-rich-blue">{copy.under18}</h1></div>;
   }
+  const base = `/phone/${personaId}/opportunities`;
   const { categories, serviceTypes, paidEnabled } = await catalog();
-  const { cards } = await listRetireeCards({ q: query.q, language: query.language });
-  const { data: nextBooking } = await admin().from("bookings").select("id, starts_at, retiree_id").eq("seeker_id", user.person.id).eq("status", "confirmed").gt("starts_at", appNow.toISOString()).order("starts_at").limit(1).maybeSingle();
-  const counted = await Promise.all(categories.map(async (category) => {
-    const { cards: rows } = await listRetireeCards({ categoryId: category.id });
-    return [category.id, rows.length] as const;
-  }));
-  const counts = new Map(counted);
-  const topRated = [...cards].filter((card) => card.rating != null).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 4);
-  const fresh = cards.filter((card) => card.rating == null).slice(0, 4);
-  if (query.q || query.language) {
-    return (
-      <div className="space-y-3 p-5 text-gosi-rich-blue">
-        <AppHeader title="Search" />
-        <p className="text-[13px] text-gosi-midnight-50">{cards.length} retirees</p>
-        {cards.map((card) => <RetireeCard key={card.personId} href={`/phone/${personaId}/opportunities/p/${card.personId}`} name={card.name} discipline={card.discipline} languages={card.languages} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
-        {!cards.length && <EmptyState title="No retirees match" text="Try another name, language, or service." />}
-      </div>
-    );
-  }
+  const { cards } = await listRetireeCards({});
+  const { data: upcomingRows } = await admin().from("bookings").select("*").eq("seeker_id", user.person.id).in("status", ["confirmed", "pending_payment"]).gt("starts_at", appNow.toISOString()).order("starts_at");
+  const upcoming = await decorateBookings((upcomingRows ?? []) as Booking[]);
+  const next = upcoming[0];
+  const { count: bookingCount } = await admin().from("bookings").select("id", { count: "exact", head: true }).eq("seeker_id", user.person.id);
+  const week = cards.filter((card) => card.next && card.next.getTime() <= appNow.getTime() + 7 * DAY_MS);
+  const top = cards.filter((card) => (card.rating ?? 0) >= 4.5);
+  const popular = serviceTypes
+    .map((type) => ({ type, count: cards.filter((card) => card.services.some((service) => service.id === type.id)).length }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
+  const canJoin = next && next.status === "confirmed" && appNow.getTime() >= new Date(next.starts_at).getTime() - 10 * 60 * 1000;
   return (
     <div className="pb-8 text-gosi-rich-blue">
-      <div className="bg-gosi-rich-blue px-5 pb-6 text-white">
-        <AppHeader transparent title="GOSI Opportunities" action={<Link href={`/phone/${personaId}/opportunities/bookings`} aria-label="My bookings"><BrandIcon name="calendar" tone="white" className="h-6 w-6" /></Link>} />
-        <h1 className="text-[28px] font-bold leading-9">Learn from experienced retirees</h1>
-        <p className="mt-2 text-[15px] text-white/80">One-hour video sessions with people verified through GOSI records.</p>
-        <form className="mt-4" action={`/phone/${personaId}/opportunities`}>
-          <input name="q" placeholder="Search services or names" className="h-12 w-full rounded-[14px] px-4 text-[15px] text-gosi-rich-blue" />
-        </form>
+      <div className="relative overflow-hidden bg-gosi-rich-blue text-white">
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-40 opacity-10" style={{ backgroundImage: "url(/brand/arrow/gosi-arrow-white.svg)", backgroundSize: "72px", backgroundRepeat: "repeat" }} />
+        <AppHeader transparent title="GOSI Opportunities" action={<Link href={`${base}/bookings`} aria-label="My bookings" className="relative"><BrandIcon name="calendar" tone="white" className="h-6 w-6" />{upcoming.length > 0 && <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-gosi-vivid-green px-1 text-[11px] font-semibold text-gosi-rich-blue">{upcoming.length}</span>}</Link>} />
+        <div className="px-5 pb-5">
+          <h1 className="max-w-[240px] text-[22px] font-semibold leading-7">{copy.seekerUi.heroTitle}</h1>
+          <p className="mt-1 max-w-[260px] text-[15px] leading-[22px] text-white/80">{copy.seekerUi.heroSubtitle}</p>
+          <Link href={`${base}/search`} className="mt-4 flex h-12 items-center rounded-[14px] bg-white px-4 text-[15px] text-gosi-midnight-50">{copy.seekerUi.searchPlaceholder}</Link>
+        </div>
       </div>
       <div className="space-y-8 px-5 py-6">
-        {nextBooking && (
-          <Link href={`/phone/${personaId}/opportunities/bookings/${nextBooking.id}`} className="block rounded-[20px] bg-white p-4">
-            <p className="text-[13px] text-gosi-midnight-50">Your next session</p>
-            <p className="font-semibold">{formatWhen(nextBooking.starts_at)}</p>
+        {next && (
+          <Link href={`${base}/bookings/${next.id}`} className="flex gap-3 rounded-[20px] bg-white p-3">
+            <DateBlock date={next.starts_at} />
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <Avatar name={next.retireeName} size={32} verified />
+                <span className="truncate text-[15px] font-semibold">{next.retireeName}</span>
+              </span>
+              <span className="mt-1 block truncate text-[13px] text-gosi-midnight-50">{next.serviceShort}</span>
+              <span className="mt-1 block text-[13px] font-semibold">{formatClock(next.starts_at)} · {relativeTo(next.starts_at, appNow)}</span>
+            </span>
+            <span className={`self-center text-[15px] font-semibold ${canJoin ? "text-gosi-blue" : "text-gosi-midnight-50"}`}>{canJoin ? copy.join : copy.seekerUi.details}</span>
           </Link>
         )}
+        <HowItWorks show={!bookingCount} />
         <section>
-          <h2 className="text-lg font-semibold">How it works</h2>
-          <div className="mt-3 grid grid-cols-3 gap-2 rounded-[20px] bg-white p-3 text-center text-[13px]">
-            {[["individuals", "Choose a retiree"], ["calendar", "Book an hour"], ["phone", "Meet by video"]].map(([icon, label]) => (
-              <div key={label}><BrandIcon name={icon} className="mx-auto h-8 w-8" /><p className="mt-2">{label}</p></div>
+          <h2 className="text-lg font-semibold">{copy.seekerUi.categories}</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {categories.map((category) => {
+              const tint = category.id === "accounting" ? "bg-[#E6F0FF]" : "bg-[#E6F9E6]";
+              const Illustration = category.id === "accounting" ? AccountingIllustration : EducationIllustration;
+              const services = serviceTypes.filter((type) => type.category_id === category.id).length;
+              return (
+                <Link key={category.id} href={`${base}/c/${category.id}`} className={`relative h-44 overflow-hidden rounded-[20px] p-3 ${tint}`}>
+                  <Illustration className="absolute -right-2 -top-2 h-24 w-32" />
+                  <span className="absolute bottom-3 left-3 right-3">
+                    <span className="line-clamp-2 block text-[15px] font-semibold leading-[22px]">{category.name}</span>
+                    <span className="mt-0.5 block text-[13px] text-gosi-midnight-50" dir="rtl">{category.name_ar}</span>
+                    <span className="mt-2 inline-flex h-7 items-center rounded-full bg-white px-2.5 text-[12px] font-semibold">{countLabel(services, "service")}</span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{copy.seekerUi.popular}</h2>
+            <SeeAll href={`${base}/search`} label={copy.seekerUi.seeAllServices} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {popular.map(({ type, count }) => (
+              <Link key={type.id} href={`${base}/t/${type.id}`} className="rounded-2xl bg-white p-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gosi-green-10"><BrandIcon name={serviceIcons[type.id] ?? "development"} className="h-6 w-6" /></span>
+                <p className="mt-2 line-clamp-2 text-[15px] font-semibold leading-[22px]">{type.short_name}</p>
+                <p className="mt-1 text-[13px] text-gosi-midnight-50">{countLabel(count, "retiree")}</p>
+              </Link>
             ))}
           </div>
         </section>
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Browse by category</h2>
-          {categories.map((category) => {
-            const types = serviceTypes.filter((type) => type.category_id === category.id);
-            return (
-              <Link key={category.id} href={`/phone/${personaId}/opportunities/c/${category.id}`} className="block overflow-hidden rounded-[20px] bg-gosi-rich-blue text-white">
-                <img src={coverFor(category.id)} alt="" className="h-28 w-full object-cover" />
-                <div className="p-4">
-                  <p className="text-[22px] font-semibold">{category.name}</p>
-                  <p className="text-[13px] text-white/80" dir="rtl">{category.name_ar}</p>
-                  <p className="mt-3 text-[13px]">{types.length} services · {counts.get(category.id) ?? 0} retirees</p>
-                </div>
-              </Link>
-            );
-          })}
-        </section>
         <section>
-          <h2 className="text-lg font-semibold">Popular services</h2>
-          <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none]">
-            {serviceTypes.map((type) => (
-              <Link key={type.id} href={`/phone/${personaId}/opportunities/t/${type.id}`} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-semibold">
-                <BrandIcon name={serviceIcons[type.id] ?? "development"} className="h-5 w-5" />
-                {type.name}
-              </Link>
-            ))}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{copy.seekerUi.thisWeek}</h2>
+            <SeeAll href={`${base}/results?sort=soonest`} label={copy.seekerUi.seeAll} />
+          </div>
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none]">
+            {week.map((card) => <RetireeCard key={card.personId} href={`${base}/p/${card.personId}`} name={card.name} discipline={card.discipline} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
           </div>
         </section>
-        {[
-          { title: "Available this week", rows: cards.slice(0, 4) },
-          { title: "Top rated", rows: topRated },
-          { title: "New on GOSI Opportunities", rows: fresh },
-        ].map((section) => (
-          <section key={section.title} className="space-y-3">
-            <h2 className="text-lg font-semibold">{section.title}</h2>
-            {section.rows.map((card) => <RetireeCard key={`${section.title}-${card.personId}`} href={`/phone/${personaId}/opportunities/p/${card.personId}`} name={card.name} discipline={card.discipline} languages={card.languages} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
-            {!section.rows.length && <p className="text-[13px] text-gosi-midnight-50">None yet</p>}
+        {top.length >= 3 && (
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{copy.seekerUi.topRated}</h2>
+              <SeeAll href={`${base}/results?sort=rating`} label={copy.seekerUi.seeAll} />
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none]">
+              {top.map((card) => <RetireeCard key={card.personId} href={`${base}/p/${card.personId}`} name={card.name} discipline={card.discipline} rating={card.rating} sessions={card.sessions} price={card.priceLabel} next={card.next?.toISOString() ?? null} appNow={appNow} />)}
+            </div>
           </section>
-        ))}
-        <p className="flex gap-2 text-[13px] text-gosi-midnight-50"><BrandIcon name="security" className="h-5 w-5" /> Every retiree is verified through GOSI records. Sessions are guidance based on professional experience, not a licensed professional service.</p>
+        )}
+        <section className="flex items-center gap-3 rounded-[20px] bg-white p-3">
+          <VerifiedIllustration className="h-16 w-20 shrink-0" />
+          <p className="flex-1 text-[15px] leading-[22px]">{copy.seekerUi.trust}</p>
+          <InfoButton title={copy.seekerUi.trust} body={copy.seekerUi.trustSheet} />
+        </section>
         <section>
           <h2 className="text-lg font-semibold">Questions</h2>
-          <div className="mt-3">
-            <FaqList items={copy.faq.seeker} paid={paidEnabled} />
-          </div>
+          <div className="mt-3"><FaqList items={copy.faq.seeker} paid={paidEnabled} /></div>
         </section>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CancelButton } from "@/components/phone/cancel-button";
+import { PastList, UpcomingList, type SeekerBooking } from "@/components/phone/seeker/booking-cards";
+import { BookingTabs } from "@/components/phone/seeker/booking-tabs";
 import { AppHeader } from "@/components/phone/ui/header";
 import { bookingsForPerson } from "@/lib/domain/bookings";
 import { getAppNow } from "@/lib/domain/clock";
@@ -17,39 +19,54 @@ export default async function BookingsPage({ params }: { params: Promise<{ perso
   const rows = await decorateBookings(await bookingsForPerson(user.person.id));
   const upcoming = rows.filter((row) => ["confirmed", "pending_payment"].includes(row.status) && new Date(row.starts_at) >= appNow);
   const past = rows.filter((row) => !upcoming.includes(row));
-  const Card = ({ row, past }: { row: (typeof rows)[number]; past?: boolean }) => {
-    const start = new Date(row.starts_at).getTime();
-    const seeker = row.seeker_id === user.person.id;
-    const canJoin = row.status === "confirmed" && appNow.getTime() >= start - 10 * 60 * 1000 && appNow.getTime() <= new Date(row.ends_at).getTime() + 30 * 60 * 1000;
-    const canCancel = (row.status === "confirmed" || row.status === "pending_payment") && start > appNow.getTime();
-    return (
-      <article className="rounded-3xl bg-white p-4">
-        <Link href={`/phone/${personaId}/opportunities/bookings/${row.id}`}>
-          <p className="font-medium">{seeker ? row.retireeName : row.seekerName}</p>
-          <p>{formatWhen(row.starts_at)}</p>
-          <p className="text-sm">{row.serviceName}</p>
-          {!seeker && <p className="text-sm">{row.seeker_need}</p>}
-          <p className="text-sm">{row.is_paid ? "Paid" : "Free"} · {row.status.replaceAll("_", " ")}</p>
-        </Link>
-        <div className="mt-2 flex flex-wrap gap-3 text-sm">
-          {canJoin && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/call`}>{copy.join}</Link>}
-          {canCancel && <CancelButton bookingId={row.id} personId={user.person.id} personaId={personaId} party={seeker ? "seeker" : "retiree"} late={start - appNow.getTime() < 3 * 60 * 60 * 1000} />}
-          {past && seeker && row.status === "completed" && !row.rated && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/feedback`}>Rate session</Link>}
-          {past && seeker && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/report`}>Report a problem</Link>}
-          {past && seeker && <Link className="text-gosi-blue" href={`/phone/${personaId}/opportunities/p/${row.retiree_id}`}>Book again</Link>}
-        </div>
-      </article>
-    );
-  };
+  const seeker = !user.person.is_retiree;
   return (
-    <div className="space-y-3 px-5 py-2 text-gosi-rich-blue">
+    <div className="pb-8 text-gosi-rich-blue">
       <AppHeader title="My bookings" />
-      <h2>Upcoming</h2>
-      {upcoming.map((row) => <Card key={row.id} row={row} />)}
-      {!upcoming.length && <p>No upcoming sessions.</p>}
-      <h2>Past</h2>
-      {past.map((row) => <Card key={row.id} row={row} past />)}
-      {!past.length && <p>No past sessions.</p>}
+      {seeker ? (
+        <BookingTabs
+          upcomingCount={upcoming.length}
+          pastCount={past.length}
+          upcoming={<UpcomingList rows={upcoming as SeekerBooking[]} personaId={personaId} appNow={appNow} />}
+          past={<PastList rows={past as SeekerBooking[]} personaId={personaId} />}
+        />
+      ) : (
+        <div className="space-y-3 px-5 py-4">
+          <h2 className="text-lg font-semibold">{copy.seekerUi.upcoming}</h2>
+          {upcoming.map((row) => {
+            const start = new Date(row.starts_at).getTime();
+            const canJoin = row.status === "confirmed" && appNow.getTime() >= start - 10 * 60 * 1000 && appNow.getTime() <= new Date(row.ends_at).getTime() + 30 * 60 * 1000;
+            const canCancel = start > appNow.getTime();
+            return (
+              <article key={row.id} className="rounded-[20px] bg-white p-4">
+                <Link href={`/phone/${personaId}/opportunities/bookings/${row.id}`}>
+                  <p className="font-semibold">{row.seekerName}</p>
+                  <p className="text-[13px] text-gosi-midnight-50">{formatWhen(row.starts_at)}</p>
+                  <p className="text-[13px]">{row.serviceShort}</p>
+                  <p className="mt-1 text-[15px]">{row.seeker_need}</p>
+                </Link>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {canJoin && <Link className="text-[15px] font-semibold text-gosi-blue" href={`/phone/${personaId}/opportunities/bookings/${row.id}/call`}>{copy.join}</Link>}
+                  {canCancel && <CancelButton bookingId={row.id} personId={user.person.id} personaId={personaId} party="retiree" late={start - appNow.getTime() < 3 * 60 * 60 * 1000} paid={row.is_paid} />}
+                </div>
+              </article>
+            );
+          })}
+          {!upcoming.length && <p className="text-[15px] text-gosi-midnight-50">{copy.seekerUi.noUpcoming}</p>}
+          <h2 className="text-lg font-semibold">{copy.seekerUi.past}</h2>
+          {past.map((row) => (
+            <article key={row.id} className="rounded-[20px] bg-white p-4">
+              <Link href={`/phone/${personaId}/opportunities/bookings/${row.id}`}>
+                <p className="font-semibold">{row.seekerName}</p>
+                <p className="text-[13px] text-gosi-midnight-50">{formatWhen(row.starts_at)}</p>
+                <p className="text-[13px]">{row.serviceShort}</p>
+                <p className="mt-1 text-[15px]">{row.seeker_need}</p>
+              </Link>
+            </article>
+          ))}
+          {!past.length && <p className="text-[15px] text-gosi-midnight-50">{copy.seekerUi.pastEmpty}</p>}
+        </div>
+      )}
     </div>
   );
 }

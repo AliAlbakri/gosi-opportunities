@@ -21,9 +21,18 @@ export function WizardLayout({
   children: ReactNode;
 }) {
   const name = copy.applySteps[step - 1];
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const scroller = document.querySelector("[data-phone-scroll]");
+    if (!scroller) return;
+    const onScroll = () => setScrolled(scroller.scrollTop > 0);
+    onScroll();
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, []);
   return (
     <div className="flex min-h-full flex-col text-gosi-rich-blue">
-      <header className="sticky top-0 z-20 bg-white">
+      <header className={`sticky top-0 z-20 bg-white ${scrolled ? "border-b border-gosi-midnight-10" : ""}`}>
         <div className="flex h-14 items-center px-2">
           <button type="button" aria-label="Close" className="grid h-10 w-10 place-items-center rounded-full bg-gosi-midnight-10" onClick={onClose}>
             <X size={20} strokeWidth={1.75} />

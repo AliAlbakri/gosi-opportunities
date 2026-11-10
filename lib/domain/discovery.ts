@@ -1,6 +1,6 @@
 import { listWindows } from "@/lib/domain/availability";
 import { getAppNow } from "@/lib/domain/clock";
-import { checklistDone, DAY_MS, generateSlots } from "@/lib/domain/rules";
+import { checklistDone, DAY_MS, generateSlots, yearsOfEmployment } from "@/lib/domain/rules";
 import { getCategories, getServiceTypes, getSettings } from "@/lib/domain/settings";
 import { admin } from "@/lib/supabase/admin";
 import { formatReviewMonth } from "@/lib/format";
@@ -19,10 +19,13 @@ export async function listRetireeCards(input: {
   price?: "any" | "free" | "paid";
   categoryId?: string;
   serviceTypeId?: string;
+  sort?: "soonest" | "rating" | "sessions";
+  minRating?: number;
+  thisWeek?: boolean;
 }) {
   const appNow = await getAppNow();
   const settings = await getSettings();
-  const [profilesRes, peopleRes, servicesRes, windowsRes, bookingsRes, typesRes, feedbackRes] = await Promise.all([
+  const [profilesRes, peopleRes, servicesRes, windowsRes, bookingsRes, typesRes, feedbackRes, employmentRes] = await Promise.all([
     admin().from("retiree_profiles").select("*").eq("state", "active").eq("accepting_bookings", true),
     admin().from("gosi_people").select("id, full_name, first_name"),
     admin().from("retiree_service_types").select("*").eq("status", "approved"),
@@ -30,16 +33,24 @@ export async function listRetireeCards(input: {
     admin().from("bookings").select("retiree_id, seeker_id, starts_at, status").in("status", ["pending_payment", "confirmed"]),
     getServiceTypes(),
     admin().from("feedback").select("booking_id, rating"),
+    admin().from("gosi_employment").select("person_id, start_date, end_date"),
   ]);
-  for (const res of [profilesRes, peopleRes, servicesRes, windowsRes, bookingsRes]) {
+  for (const res of [profilesRes, peopleRes, servicesRes, windowsRes, bookingsRes, feedbackRes, employmentRes]) {
     if (res.error) throw new Error(res.error.message);
   }
   const { data: completed } = await admin().from("bookings").select("id, retiree_id").eq("status", "completed");
   const ratingByBooking = new Map((feedbackRes.data ?? []).map((row) => [row.booking_id, row.rating as number]));
+  const jobsByPerson = new Map<string, { start_date: string; end_date: string | null }[]>();
+  for (const job of employmentRes.data ?? []) {
+    const list = jobsByPerson.get(job.person_id) ?? [];
+    list.push(job);
+    jobsByPerson.set(job.person_id, list);
+  }
   const people = new Map((peopleRes.data ?? []).map((row) => [row.id, row]));
   const types = new Map(typesRes.map((row) => [row.id, row]));
   const q = input.q?.trim().toLowerCase() ?? "";
   const cards = [];
+  const languages = new Set<string>();
   for (const profile of (profilesRes.data ?? []) as RetireeProfile[]) {
     const windows = (windowsRes.data ?? []).filter((row) => row.person_id === profile.person_id);
     if (!checklistDone(profile, windows.length)) continue;
@@ -47,6 +58,7 @@ export async function listRetireeCards(input: {
     if (!services.length) continue;
     if (input.serviceTypeId && !services.some((row) => row.service_type_id === input.serviceTypeId)) continue;
     if (input.categoryId && !services.some((row) => types.get(row.service_type_id)?.category_id === input.categoryId)) continue;
+    for (const language of profile.languages ?? []) languages.add(language);
     if (input.language && !(profile.languages ?? []).includes(input.language)) continue;
     const person = people.get(profile.person_id);
     const hay = [
@@ -74,20 +86,42 @@ export async function listRetireeCards(input: {
     const done = (completed ?? []).filter((row) => row.retiree_id === profile.person_id);
     const ratings = done.map((row) => ratingByBooking.get(row.id)).filter((n): n is number => typeof n === "number");
     const minPrice = priced.length ? Math.min(...priced.map((row) => Number(row.price))) : null;
+    const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+    if (input.minRating && (rating == null || rating < input.minRating)) continue;
+    if (input.thisWeek && (!next || next.getTime() > appNow.getTime() + 7 * DAY_MS)) continue;
+    const name = person?.full_name ?? "Retiree";
     cards.push({
       personId: profile.person_id,
-      name: person?.full_name ?? "Retiree",
+      name,
+      initials: name.split(" ").filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toUpperCase() ?? "").join(""),
       discipline: profile.discipline_role ?? "",
       languages: profile.languages ?? [],
-      rating: ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null,
+      years: Math.round(yearsOfEmployment(jobsByPerson.get(profile.person_id) ?? [], appNow)),
+      rating,
       sessions: ratings.length,
       next,
       priceLabel: !settings.paid_enabled || minPrice == null ? "Free" : `SAR ${Math.round(minPrice)}`,
       fullyBooked: !next,
+      services: services.map((row) => {
+        const type = types.get(row.service_type_id);
+        return {
+          id: row.service_type_id,
+          name: type?.name ?? row.service_type_id,
+          shortName: type?.short_name ?? type?.name ?? row.service_type_id,
+          description: row.description,
+          categoryId: type?.category_id ?? "",
+          priceLabel: !settings.paid_enabled || row.pricing_mode !== "paid" ? "Free" : `SAR ${Math.round(Number(row.price))}`,
+        };
+      }),
     });
   }
-  cards.sort((a, b) => a.name.localeCompare(b.name));
-  return { cards, paidEnabled: settings.paid_enabled };
+  cards.sort((a, b) => {
+    if (input.sort === "soonest") return (a.next?.getTime() ?? Number.MAX_SAFE_INTEGER) - (b.next?.getTime() ?? Number.MAX_SAFE_INTEGER);
+    if (input.sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+    if (input.sort === "sessions") return b.sessions - a.sessions;
+    return a.name.localeCompare(b.name);
+  });
+  return { cards, paidEnabled: settings.paid_enabled, languages: [...languages].sort() };
 }
 
 export async function publicProfile(personId: string) {

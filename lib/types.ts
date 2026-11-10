@@ -76,6 +76,8 @@ export type ServiceType = {
   category_id: string;
   name: string;
   name_ar: string;
+  short_name: string;
+  blurb: string;
   sort: number;
 };
 

@@ -86,6 +86,12 @@ export function riyadhParts(date: Date) {
   return { y, m, d, weekday };
 }
 
+export function onTheHour(date: Date) {
+  const parts = riyadhParts(date);
+  const hour = Number(formatInTimeZone(date, TZ, "H"));
+  return atRiyadh(parts.y, parts.m, parts.d, hour, 0);
+}
+
 export function atRiyadh(y: number, m: number, d: number, h: number, min = 0) {
   const dt = new Date(Date.UTC(y, m - 1, 1));
   dt.setUTCDate(d);

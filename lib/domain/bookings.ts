@@ -7,7 +7,8 @@ import { getPayment, recordFailed, recordHeld, refundBooking } from "@/lib/domai
 import { checklistDone, DAY_MS, generateSlots, HOLD_MS, isLateCancel, SESSION_MS } from "@/lib/domain/rules";
 import { getSettings } from "@/lib/domain/settings";
 import { ensureRoom, roomNameForBooking } from "@/lib/daily";
-import { ageInRiyadh, formatWhen } from "@/lib/format";
+import { ageInRiyadh, formatWhen, TZ } from "@/lib/format";
+import { formatInTimeZone } from "date-fns-tz";
 import { admin } from "@/lib/supabase/admin";
 import type { Booking, PaymentMethod } from "@/lib/types";
 
@@ -85,6 +86,9 @@ export async function createBooking(input: {
   if (!service) return { ok: false as const, error: "Choose an approved Service Type." };
   const slots = await openSlots(input.retireeId, input.seekerId);
   const starts = new Date(input.startsAt);
+  const minute = Number(formatInTimeZone(starts, TZ, "m"));
+  const second = Number(formatInTimeZone(starts, TZ, "s"));
+  if (minute !== 0 || second !== 0) return { ok: false as const, error: "Sessions start on the hour." };
   if (!slots.some((slot) => slot.toISOString() === starts.toISOString())) {
     return { ok: false as const, error: "This slot was just taken" };
   }

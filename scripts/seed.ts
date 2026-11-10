@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import { clearClockCache } from "@/lib/domain/clock";
 import { addWorkingDays } from "@/lib/domain/rules";
-import { addRiyadhDays, atRiyadh, formatMonthKey, riyadhParts } from "@/lib/format";
+import { addRiyadhDays, atRiyadh, formatMonthKey, onTheHour, riyadhParts } from "@/lib/format";
 import { admin } from "@/lib/supabase/admin";
 
 const DESC =
@@ -174,6 +174,20 @@ export async function seedDemo() {
   }).eq("id", 1);
   await db.from("categories").update({ suggested_price: 120 }).eq("id", "education");
   await db.from("categories").update({ suggested_price: 180 }).eq("id", "accounting");
+  const shorts: [string, string, string][] = [
+    ["edu-english", "English lessons", "Lessons and conversation practice"],
+    ["edu-arabic", "Arabic for non-Arabic speakers", "Learn Arabic from a retired teacher"],
+    ["edu-other-lang", "Other languages", "e.g. French"],
+    ["edu-exam-prep", "Language exam prep", "Get ready for a language test"],
+    ["acc-small-biz", "Small business accounts", "Make sense of your business numbers"],
+    ["acc-bookkeeping", "Bookkeeping setup", "Set up simple, reliable records"],
+    ["acc-statements", "Financial statements", "Read and understand your statements"],
+    ["acc-vat-zakat", "VAT and Zakat", "Understand what you owe and when"],
+  ];
+  for (const [id, short_name, blurb] of shorts) {
+    const { error } = await db.from("service_types").update({ short_name, blurb }).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
   clearClockCache();
 
   const people: Person[] = [
@@ -466,8 +480,7 @@ export async function seedDemo() {
   for (let i = 0; i < 40; i++) {
     const retiree = i < 18 ? "ret-abdullah" : i < 23 ? "ret-majed" : activeForHistory[i % activeForHistory.length];
     const seeker = seekers[i % 4];
-    const starts = new Date(appNow.getTime() - (i + 3) * 86400000);
-    starts.setUTCMinutes(0, 0, 0);
+    const starts = onTheHour(new Date(appNow.getTime() - (i + 3) * 86400000));
     const id = uuid(`past:${i}`);
     bookings.push({
       id,
@@ -497,7 +510,7 @@ export async function seedDemo() {
     });
   }
 
-  const noShowStart = new Date(appNow.getTime() - 6 * 86400000);
+  const noShowStart = onTheHour(new Date(appNow.getTime() - 6 * 86400000));
   bookings.push({
     id: uuid("noshow"),
     seeker_id: pid("seek-omar"),
@@ -513,7 +526,7 @@ export async function seedDemo() {
     terms_accepted_at: noShowStart.toISOString(),
     created_at: noShowStart.toISOString(),
   });
-  const lateStart = new Date(appNow.getTime() - 4 * 86400000);
+  const lateStart = onTheHour(new Date(appNow.getTime() - 4 * 86400000));
   bookings.push({
     id: uuid("late"),
     seeker_id: pid("seek-sara"),
@@ -596,7 +609,7 @@ export async function seedDemo() {
     cursor = addRiyadhDays(atRiyadh(parts.y, parts.m, parts.d, 12), 1);
   }
 
-  const releasedStart = new Date(appNow.getTime() - 5 * 86400000);
+  const releasedStart = onTheHour(new Date(appNow.getTime() - 5 * 86400000));
   const releasedId = uuid("paid:released");
   bookings.push({
     id: releasedId,
@@ -614,7 +627,7 @@ export async function seedDemo() {
     completed_at: new Date(releasedStart.getTime() + 3600000).toISOString(),
     created_at: releasedStart.toISOString(),
   });
-  const paidOutStart = new Date(appNow.getTime() - 40 * 86400000);
+  const paidOutStart = onTheHour(new Date(appNow.getTime() - 40 * 86400000));
   const paidOutId = uuid("paid:out");
   bookings.push({
     id: paidOutId,
@@ -633,7 +646,7 @@ export async function seedDemo() {
     created_at: paidOutStart.toISOString(),
   });
   const refundedId = uuid("paid:refunded");
-  const refundedStart = new Date(appNow.getTime() - 12 * 86400000);
+  const refundedStart = onTheHour(new Date(appNow.getTime() - 12 * 86400000));
   bookings.push({
     id: refundedId,
     seeker_id: pid("seek-james"),
@@ -652,7 +665,7 @@ export async function seedDemo() {
     late_cancel: false,
     created_at: refundedStart.toISOString(),
   });
-  const disputeStart = new Date(appNow.getTime() - 3 * 3600000);
+  const disputeStart = onTheHour(new Date(appNow.getTime() - 3 * 3600000));
   const disputeId = uuid("paid:dispute");
   bookings.push({
     id: disputeId,

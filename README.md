@@ -5,7 +5,7 @@ A working MVP 1 demo: retiree, seeker, ops, and tech journeys, with real data in
 ## Setup
 
 1. Create a free Supabase project (a region near Riyadh, such as Frankfurt) and a free Daily.co account.
-2. In the Supabase SQL editor, run `supabase/migrations/0001_init.sql`, then `supabase/migrations/0002_application_step.sql`.
+2. In the Supabase SQL editor, run `supabase/migrations/0001_init.sql`, then `0002_application_step.sql`, `0003_photo_path.sql`, and `0004_service_short_name.sql`.
 3. Create a **private** Storage bucket named `retiree-docs`.
 4. Enable the `pg_cron` and `pg_net` extensions. Do not schedule the tick until the app has a public URL.
 5. Copy `.env.example` to `.env.local` and fill:
@@ -54,6 +54,6 @@ The GitHub repo is [AliAlbakri/gosi-opportunities](https://github.com/AliAlbakri
 
 After the deployment is live:
 
-1. In the Supabase SQL editor, run `0001_init.sql` and `0002_application_step.sql` if the tables are not there yet. The private bucket `retiree-docs` should already exist.
+1. In the Supabase SQL editor, run `0001_init.sql`, `0002_application_step.sql`, `0003_photo_path.sql`, and `0004_service_short_name.sql` if the tables are not there yet. The private bucket `retiree-docs` should already exist.
 2. Enable `pg_cron` and `pg_net`, then run `supabase/cron.sql` with the Vercel URL and `CRON_SECRET`.
 3. Open the deployed site and choose **Reset demo data**.

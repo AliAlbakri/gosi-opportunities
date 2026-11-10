@@ -142,11 +142,12 @@ Tabs: **Sessions** | **Availability** | **Profile** | **Earnings** (Earnings onl
 Routes under `/phone/[id]/opportunities/...`.
 
 ### 5.1 Browse (stage 7)
-- Top: search field (matches retiree name, discipline, Service Type, description), filter chips: Language, Free only / Paid only (paid switch on only).
-- Category cards (Education and Training, Accounting and Finance, with Arabic names as secondary) → Service Type list → retiree list.
-- Retiree card: avatar initials circle, name, discipline, "Verified by GOSI" mini badge, years of experience, languages, rating ("4.6 ★ · 12 sessions") or "New on GOSI Opportunities", price chip ("Free" or "SAR 150"), **next available slot** ("Next: Tue 11 Nov, 18:00"). Retirees with no free slot in the 30-day window stay listed with "Fully booked for now" (PRD: stay visible so seekers see supply exists). Retirees with `accepting_bookings=false`, `paused`, or an incomplete go-live checklist are not listed.
+- Home: Rich Blue hero with a search field that opens the search screen, a next-session card when one is booked, two category tiles, a grid of popular services (short names), and horizontal carousels. No vertical retiree list on the home or category page.
+- Category page: tinted header, service rows (short name, blurb, avatar stack, count) and a retiree carousel. "See all" opens the results list.
+- Service Type page and results: row cards, sort (soonest, highest rated, most sessions) and filters (language, rating 4+, this week).
+- Retiree card: monogram, verified check, name, role, "4.8 (21)" or New, price on the row variant, next slot ("Tomorrow 18:00") or "Fully booked". Sessions start on the hour. Retirees with `accepting_bookings=false`, `paused`, or an incomplete go-live checklist are not listed.
 - Under-18: blocked screen.
-- Bottom of the home: **Questions**, the seeker FAQ. Paid answers follow the paid switch.
+- Bottom of the home: trust line and **Questions**, the seeker FAQ. Paid answers follow the paid switch.
 
 ### 5.2 Retiree profile
 Two clearly separated blocks:
@@ -165,7 +166,7 @@ Two clearly separated blocks:
 5. Confirmation screen + notifications (section 10). Booking appears in **My bookings**.
 
 ### 5.4 My bookings
-Upcoming / Past. Upcoming card: retiree, date/time, Service Type, Free/Paid, **Join** (active from 10 min before), **Cancel**. Past: status, **Rate session** (if completed and not yet rated), **Report a problem**, **Book again**.
+Upcoming / Past tabs. Upcoming card: date block, retiree, short service name, time, status, **Join** (label "Opens 10 min before" until 10 minutes before the start) and **Details**. Cancel lives on the booking detail, with the late-cancel warning and a paid-refund line. Past: status, then one action — **Rate session**, or stars and **Book again**. **Report a problem** is on the detail of a completed session or a retiree no-show, not on the card. A retiree opening the same page sees the seeker's name, the need, and Join/Cancel.
 
 ### 5.5 Feedback (stage 9)
 After a completed session, the seeker gets a prompt (screen shown right after leaving the call, plus a notification). Fields: rating 1–5 (required), "Did this session help with what you needed?" Yes/No, tags (multi: clear explanation, strong knowledge, well prepared, unclear, limited knowledge, unprepared, off-topic, unprofessional), optional written review. The text is published on the retiree profile as soon as it is submitted.

@@ -9,7 +9,7 @@ function personId(national: string) {
 }
 
 const base = process.env.SCREEN_BASE ?? "http://localhost:3000";
-const shots: { name: string; path: string }[] = [
+const shots: { name: string; path: string; tab?: string; detail?: boolean; clearTab?: boolean }[] = [
   { name: "home-fahad", path: "/phone/ret-fahad/home" },
   { name: "home-hassan", path: "/phone/ret-hassan/home" },
   { name: "home-mona", path: "/phone/ret-mona/home" },
@@ -22,15 +22,38 @@ const shots: { name: string; path: string }[] = [
   { name: "category-education", path: "/phone/seek-sara/opportunities/c/education" },
   { name: "profile-abdullah", path: `/phone/seek-sara/opportunities/p/${personId("1000004825")}` },
   { name: "ops-noura", path: "/ops/op-noura" },
+  { name: "seeker-home", path: "/phone/seek-sara/opportunities" },
+  { name: "seeker-category", path: "/phone/seek-sara/opportunities/c/education" },
+  { name: "seeker-service", path: "/phone/seek-sara/opportunities/t/edu-english" },
+  { name: "seeker-search", path: "/phone/seek-sara/opportunities/search" },
+  { name: "seeker-results", path: "/phone/seek-sara/opportunities/results?category=education&sort=soonest" },
+  { name: "seeker-bookings", path: "/phone/seek-sara/opportunities/bookings", clearTab: true },
+  { name: "seeker-bookings-past", path: "/phone/seek-sara/opportunities/bookings", tab: "past" },
+  { name: "seeker-booking-detail", path: "/phone/seek-sara/opportunities/bookings", detail: true, clearTab: true },
+  { name: "seeker-bookings-empty", path: "/phone/seek-james/opportunities/bookings", clearTab: true },
 ];
 
 async function main() {
   await mkdir("screenshots", { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  page.setDefaultNavigationTimeout(180000);
   for (const shot of shots) {
-    const response = await page.goto(`${base}${shot.path}`, { waitUntil: "networkidle" });
+    const response = await page.goto(`${base}${shot.path}`, { waitUntil: "load" });
     if (!response || response.status() >= 400) console.error(shot.name, response?.status());
+    if (shot.clearTab) {
+      await page.evaluate(() => sessionStorage.removeItem("gosi-bookings-tab"));
+      await page.reload({ waitUntil: "load" });
+    }
+    if (shot.tab) {
+      await page.evaluate((tab) => sessionStorage.setItem("gosi-bookings-tab", tab), shot.tab);
+      await page.reload({ waitUntil: "load" });
+    }
+    if (shot.detail) {
+      const href = await page.locator("a", { hasText: "Details" }).first().getAttribute("href");
+      if (href) await page.goto(href.startsWith("http") ? href : `${base}${href}`, { waitUntil: "load" });
+    }
+    await page.waitForTimeout(500);
     const png = await page.screenshot({ fullPage: false });
     await writeFile(`screenshots/${shot.name}.png`, png);
     console.log(shot.name);

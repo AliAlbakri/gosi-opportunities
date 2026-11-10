@@ -186,39 +186,34 @@ Weekly view: seven day rows (Sun → Sat), each with time-range chips ("18:00–
 
 ## 5. Seeker experience
 
-### 5.1 Opportunities home (seeker landing), replace the current list
-1. **Hero** (Rich Blue, transparent header, pattern): "Learn from experienced retirees" / "One-hour video sessions with people verified through GOSI records." Large search field inside the hero (tapping opens §5.3).
-2. If the seeker has an upcoming booking: **"Your next session" banner** card (date, retiree, Join/Details).
-3. **How it works** (3 compact steps with icons): Choose a retiree · Book an hour · Meet by video.
-4. **Browse by category**: two large cards with cover art, Arabic name as secondary line, "4 services · 12 retirees".
-5. **Popular services**: horizontal chips of Service Types.
-6. **Available this week**: horizontal carousel of compact retiree cards (avatar, name, verified, rating, next slot).
-7. **Top rated** and **New on GOSI Opportunities**: carousels.
-8. Trust strip: shield icon + "Every retiree is verified through GOSI records. Sessions are guidance based on professional experience, not a licensed professional service."
+### 5.1 Opportunities home
+In this order. No vertical retiree list on this page.
+1. **Hero** about 220px, Rich Blue. Title "Learn from experienced retirees", one subtitle, white search field that opens the search screen. Calendar icon with the upcoming count. A tiled GOSI arrow at 10% opacity on the right.
+2. **Next session** only when the seeker has a booking: date block (56×64, "WED / 11 / NOV"), avatar 32, name, short service name, time and a relative label. Join from 10 minutes before, otherwise Details.
+3. **Categories**: two tiles side by side, about 168×176. Education on `#E6F9E6`, Accounting on `#E6F0FF`. Illustration top-right, name, Arabic caption, service-count chip ("4 services"). No dark cover and no second title.
+4. **Popular services**: a 2-column grid of 4 tiles (icon, short name, retiree count) and "See all services".
+5. **Available this week**: one horizontal snap carousel of compact cards, "See all" to results sorted by soonest.
+6. **Top rated** carousel only when at least 3 retirees are rated 4.5 or higher.
+7. **How it works** only when the seeker has no bookings. "Got it" stores the dismissal in `localStorage`.
+8. Trust strip (verified illustration, one line, info sheet) and the seeker FAQ.
 
-### 5.2 Category and Service Type browse (replace the current boxes)
-**Category cards on the Opportunities home** (two, full width, 160px tall): cover art background (§2.1), white category name (Title), Arabic name below in white 80% (Caption, right-aligned under it is fine), bottom row of two white-on-glass pills: "4 services" · "12 retirees", trailing circular arrow button. Whole card tappable.
+Chips, tiles, cards and booking rows use `service_types.short_name`. The Service Type page title keeps the full name.
 
-**Category page** (see wireframe A.2):
-1. Collapsing cover header (200px → 56px `AppHeader` on scroll): cover art, category name, Arabic name, one-line blurb from `categories.blurb`.
-2. **Services in this category**: list of Service Type rows inside one white card, each row 64px: green-tint 40px icon tile (GOSI icon chosen per Service Type), name (Body-strong, 2 lines max), meta line "6 retirees · Free" or "6 retirees · from SAR 120" (Caption, secondary), chevron. Dividers between rows. Never green-filled text bars.
-3. **Retirees in this category**: section header with "See all", 3 retiree cards (§5.4), then "See all 12 retirees" button.
-4. Trust strip at the bottom.
+### 5.2 Category and Service Type
+**Category page**: tinted header matching the category, illustration, name, Arabic, one-line blurb with "More" for the rest. Stat chips: service count, retiree count, "Free sessions" or "From SAR 120". One white card of service rows: 40px tinted icon, short name, blurb, avatar stack (up to 3 overlapping 24px monograms), retiree count, chevron. A service with no retirees sorts last, at 50% opacity, with "Coming soon", and is not a link. Retirees are a carousel plus "See all N", which opens results filtered to the category.
 
-**Service Type page**: `AppHeader` with the Service Type name; short explainer card (what this service is, typical session, "Guidance only" note for Accounting); sort + filter bar; full list of retiree cards offering it, each card showing that retiree's description snippet for this service.
+**Service Type page and results** share the row list. Sticky bar: "Sort: Soonest" and "Filters" (language, rating 4+, this week) with a count. Accounting shows a "Guidance only" row. Empty state uses the empty-search illustration. Search is its own screen (§5.3).
 
-Icon mapping (GOSI icons, fall back to lucide): English lessons → `chat`; Arabic for non-Arabic speakers → `individuals`; Other languages → `connect`; Language exam prep → `certified-document`; Small business accounts → `business`; Bookkeeping → `settings`; Financial statements → `financial-investment`; VAT and Zakat → `insurance`. Education category → `development`; Accounting category → `financial-investment`.
+Icon mapping (GOSI icons, fall back to lucide): English lessons → `chat`; Arabic for non-Arabic speakers → `individuals`; Other languages → `connect`; Language exam prep → `certified-document`; Small business accounts → `business`; Bookkeeping → `settings`; Financial statements → `financial-investment`; VAT and Zakat → `insurance`.
 
-### 5.3 Search and filters
-Search screen with recent searches and suggestions (Service Types, languages). Results show count ("12 retirees"), **Sort** (Recommended, Soonest available, Highest rated, Most sessions) and **Filters** button with count badge. Filter `BottomSheet`: Service Type · Language (labelled "Session language") · Availability (Any time / Today / Tomorrow / This week, plus Morning / Afternoon / Evening) · Rating 4+ · Price Free/Paid (paid switch on only) → "Show 8 retirees" button. Active filters as removable chips under the bar. Empty state with illustration and "Clear filters".
+### 5.3 Search
+Autofocus the field. Removable recent-search chips live in `localStorage`. Popular service tiles sit under the field. As the seeker types, results group into Services (rows) and Retirees (row cards). An empty query result uses the empty-search illustration.
 
-### 5.4 Retiree card (list)
-Whole card tappable, white, radius 20, padding 16:
-- Row 1: Avatar 64 · name (Body-strong) + `VerifiedBadge` icon · discipline (Caption, 1 line) · "25 yrs experience · Arabic, English".
-- Row 2: `RatingStars` + "4.8 (21 sessions)" or `StatusPill` "New".
-- Row 3: up to 2 Service Type tags + "+1".
-- Divider, then footer row: price ("Free" or "SAR 150 / hour") left; next availability chip right ("Tomorrow, 18:00" in green-tint, or "Fully booked for now" in grey) + chevron.
-Next availability must be computed per retiree from real availability and bookings. **Fix seed data so retirees have varied availability and next slots** (not all the same time).
+### 5.4 Retiree card
+One component, two variants. The whole card is the link. The avatar keeps the monogram and drops the green arrow. A verified booking shows an 18px blue circle, white check, 2px white ring. Cards do not print "Verified by GOSI".
+- **Compact** (carousels, 168px): avatar 56, one-line name, one-line role, "★ 4.8 (21)" in vivid green or a New pill, next-slot chip ("Tomorrow 18:00") or "Fully booked".
+- **Row** (results and the Service Type page): avatar 56, name and rating on one line, "English teacher · 31 yrs experience", a two-line description for the current service, price on the left, next-slot chip on the right.
+Sessions start on the hour. Creating a booking rejects a start whose Riyadh minute or second is not 0.
 
 ### 5.5 Retiree profile (the page a seeker opens to book; see wireframe A.3)
 One `AppHeader` only (back button + share/heart icon buttons on the right, title appears on scroll). Order, top to bottom:
@@ -247,9 +242,15 @@ One `AppHeader` only (back button + share/heart icon buttons on the right, title
 - **Success screen**: animated check, "You're booked", details card, **Add to calendar** (downloads an .ics), "What to expect" tips (find a quiet place, test your camera, join from My bookings 10 minutes before), **View my bookings** / **Back to Opportunities**.
 
 ### 5.7 My bookings and booking detail
-- Entry: "My bookings" button in the Opportunities header (calendar icon) with a count badge.
-- Tabs Upcoming / Past. Booking card: date block (day number + month), time, retiree avatar + name, service, `StatusPill`, countdown, Join state.
-- Booking detail: header card, your notes, status timeline (Booked → Reminder → Session → Feedback), actions: **Join** (from 10 min before), **Cancel** (sheet shows policy and a warning if within 3 hours: "This will be recorded as a late cancellation"), **Report a problem**, **Book again** (past).
+Full-bleed header. Upcoming / Past tabs show counts. The last tab is kept in `sessionStorage`. Upcoming is soonest first. When the first start is inside 24 hours, that card is the larger "Next up" card. Past sessions group by month, newest first.
+
+Upcoming card: date block, avatar 32, name, short service name, time range, status pill, then Join and Details. Join stays visible and reads "Opens 10 min before" until the window. Cancel is not on the card.
+
+Past card: avatar 40, name, short name, date and time, status (Completed, Cancelled with "by you" or "by retiree", Missed with who did not join). One action: "Rate session" when completed and unrated, stars plus "Book again" when rated, otherwise "Book again". Report is not on the card.
+
+Detail: header card, countdown, tips, "Add to calendar" (.ics), read-only need and goal, timeline Booked → Reminder sent → Session → Feedback. Sticky footer for an upcoming session: Join and "Cancel booking". The cancel sheet shows the policy, "This will be recorded as a late cancellation" inside 3 hours, and "Paid sessions are refunded in full" when the session is paid. Past footer: "Book again", and "Report a problem" only for a completed session or a retiree no-show. Empty upcoming uses the booking illustration. Empty past is one line.
+
+The bookings page is shared. A retiree still sees the other person's name, the need, and Join/Cancel, without Rate or Report.
 
 ### 5.8 Sessions
 - **Pre-call lobby**: camera preview, mic/camera toggles, "Joining as Sara", session info, tips, **Join now**.
@@ -290,13 +291,13 @@ Overview stat cards with icons, PRD-style tables (Rich Blue header row, zebra ro
 - [ ] An uninvited retiree sees no Opportunities section; a non-retiree sees the seeker card.
 - [ ] The application is a 5-step wizard with stepper, autosave indicator, sticky footer, inline validation, live profile preview, optional photo, review with edit links and a success screen.
 - [ ] Application status, go-live checklist and "You're live" screens exist and look finished.
-- [ ] Seeker Opportunities home has hero search, categories with cover art, carousels and trust strip.
+- [ ] Seeker Opportunities home has a hero search, two category tiles, a popular-services grid, carousels and a trust strip. No vertical retiree list.
 - [ ] Retiree cards have avatar, verified badge, rating, tags, price and varied next availability.
 - [ ] Profile has stats, services, verified vs self-declared blocks, availability preview, reviews summary and a sticky booking bar.
 - [ ] Booking: 4 steps with day strip, grouped slot grid, needs, review, success with .ics.
 - [ ] My bookings, booking detail, cancel sheet with late warning, pre-call lobby, in-call, feedback flow.
 - [ ] No scrollbars inside the phone, real status bar icons, every inner screen uses `AppHeader`, no text-only tiles, skeletons and empty states everywhere.
-- [ ] Category cards have cover art and counts; the category page shows Service Types as icon rows with retiree count and price range, then retirees; each Service Type has its own page.
+- [ ] Category tiles are side by side with an illustration and a service count. The category page has a tinted header, stat chips, service rows with an avatar stack, and a retiree carousel. Each Service Type has its own page.
 - [ ] Retiree profile: one back control, hero + stats row, next available, services high on the page, verified block with an employment timeline (date ranges, no ISO dates, no placeholder employers), separate self-declared block, review summary with unique reviews, sticky booking bar always visible.
 - [ ] Nothing on the §0.1 never-ship list appears on any screen.
 - [ ] Layouts match the Appendix A wireframes in structure.
@@ -311,64 +312,55 @@ Symbols (🔍 🛡 📅 ★ ⓘ ●) stand for GOSI or lucide icons; never rende
 ### A.1 Seeker Opportunities home
 ```
 ┌──────────────────────────────────┐
-│ ‹  GOSI Opportunities      [📅2] │  ← AppHeader over Rich Blue hero
-│                                  │
-│  Learn from experienced retirees │  Display, white
-│  One-hour video sessions with    │  Body, white 80%
+│ ‹  GOSI Opportunities      [📅2] │  header over Rich Blue, arrow tile at 10%
+│  Learn from experienced retirees │
+│  One-hour video sessions with    │
 │  people verified by GOSI records │
 │ ┌──────────────────────────────┐ │
-│ │ 🔍 Search services or names  │ │  white search field, radius 14
+│ │ 🔍 Search a service or a name│ │  opens the search screen
 │ └──────────────────────────────┘ │
-├──────────────────────────────────┤  page bg Midnight 10%
-│ ┌ Your next session ───────────┐ │  only if booked
-│ │ [11 NOV] Abdullah · VAT  Join│ │
-│ └──────────────────────────────┘ │
-│  How it works                    │
-│  (1)Choose  (2)Book   (3)Meet    │  3 icon steps in one card
-│  Browse by category              │
-│ ┌──────────────────────────────┐ │
-│ │▓ cover art  Education and    │ │  160px cover card
-│ │▓            Training         │ │
-│ │▓ التعليم والتدريب            │ │
-│ │ (4 services)(12 retirees) (→)│ │
-│ └──────────────────────────────┘ │
-│ ┌ Accounting and Finance ──────┐ │
-│ └──────────────────────────────┘ │
-│  Popular services          →     │  chips row
-│  Available this week   See all → │  horizontal cards
-│  [AA ★4.8 Tmrw 18:00] [KT New..] │
-│  Top rated · New on GOSI Opps    │
-│  🛡 Every retiree is verified... │  trust strip
+├──────────────────────────────────┤
+│ [WED] (AD) Latifa                │  next session, only if booked
+│ [ 11 ] English lessons           │
+│ [NOV] 09:00 · in 2 days  Details │
+│ ┌ Education ──┐ ┌ Accounting ──┐ │  two tiles, illustration top-right
+│ │ book art    │ │ calculator   │ │
+│ │ Education   │ │ Accounting   │ │
+│ │ 4 services  │ │ 4 services   │ │
+│ └─────────────┘ └──────────────┘ │
+│  Popular services   See all      │  2×2 short-name tiles
+│  [chat] English lessons          │
+│         6 retirees               │
+│  Available this week    See all  │  horizontal compact cards
+│  [AD] Latifa                     │
+│       English teacher            │
+│       ★ 4.8 (21)  Tomorrow 18:00 │
+│  Top rated                       │  only if 3 retirees are ≥ 4.5
+│  🛡 Every retiree is verified... │
+│  Questions                       │
 └──────────────────────────────────┘
 ```
 
 ### A.2 Category page
 ```
 ┌──────────────────────────────────┐
-│ ‹                          ♡     │  transparent header over cover
-│▓▓▓▓▓▓ cover art ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│
-│  Accounting and Finance          │  Title, white
-│  المحاسبة والمالية                │
-│  Guidance from retired           │  blurb
-│  accountants. Guidance only.     │
+│ ‹                                │  title appears on scroll
+│              [illustration]      │  tinted header, #E6F9E6 or #E6F0FF
+│  Education and Training          │
+│  التعليم والتدريب                 │
+│  Lessons and practice.  More     │
+│  (4 services) (6 retirees) (Free)│
 ├──────────────────────────────────┤
-│  Services in this category       │
 │ ┌──────────────────────────────┐ │
-│ │[ic] Understanding small      │ │  icon tile 40 + name
-│ │     business accounts      › │ │
-│ │     6 retirees · Free        │ │  meta
+│ │[ic] English lessons        › │ │  short name + blurb
+│ │     Lessons and conversation │ │
+│ │     (AA)(KT)  6 retirees     │ │  avatar stack
 │ │──────────────────────────────│ │
-│ │[ic] Setting up bookkeeping › │ │
-│ │     4 retirees · from SAR 120│ │
-│ │──────────────────────────────│ │
-│ │[ic] Financial statements   › │ │
-│ │──────────────────────────────│ │
-│ │[ic] VAT and Zakat          › │ │
+│ │[ic] Other languages          │ │  50% opacity, not a link
+│ │     Coming soon              │ │
 │ └──────────────────────────────┘ │
-│  Retirees in this category See all│
-│  [retiree card]                  │
-│  [retiree card]                  │
-│  [ See all 12 retirees ]         │
+│  Retirees in Education   See all │
+│  [compact card] [compact card] → │  carousel, not a vertical list
 └──────────────────────────────────┘
 ```
 

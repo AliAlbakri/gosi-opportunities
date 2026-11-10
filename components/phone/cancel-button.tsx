@@ -16,6 +16,7 @@ export function CancelButton({
   late = false,
   paid = false,
   variant = "button",
+  note,
 }: {
   bookingId: string;
   personId: string;
@@ -24,6 +25,7 @@ export function CancelButton({
   late?: boolean;
   paid?: boolean;
   variant?: "button" | "text";
+  note?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -41,6 +43,7 @@ export function CancelButton({
         <div className="space-y-3 text-[15px] leading-[22px]">
           <p>{copy.seekerUi.cancelPolicy}</p>
           {late && <p className="font-semibold">{copy.seekerUi.lateWarning}</p>}
+          {note && <p className="font-semibold">{note}</p>}
           {paid && <p>{copy.seekerUi.paidRefund}</p>}
           <PrimaryButton
             className="w-full"

@@ -13,5 +13,5 @@ export default async function CallPage({ params }: { params: Promise<{ personaId
   if (booking.seeker_id !== user.person.id && booking.retiree_id !== user.person.id) notFound();
   const [row] = await decorateBookings([booking]);
   const offset = await getClockOffset();
-  return <CallFrame bookingId={bookingId} personId={user.person.id} personaId={personaId} name={user.person.first_name} offset={offset} serviceName={row.serviceName} startsAt={booking.starts_at} role={booking.seeker_id === user.person.id ? "seeker" : "retiree"} />;
+  return <CallFrame bookingId={bookingId} personId={user.person.id} personaId={personaId} name={user.person.first_name} otherName={booking.seeker_id === user.person.id ? row.retireeFirst : row.seekerName} offset={offset} serviceName={row.serviceShort} startsAt={booking.starts_at} endsAt={booking.ends_at} role={booking.seeker_id === user.person.id ? "seeker" : "retiree"} />;
 }

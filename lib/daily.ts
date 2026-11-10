@@ -65,6 +65,7 @@ async function dailyFetch(path: string, body?: unknown) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const payload = (await response.json().catch(() => ({}))) as { error?: string; info?: string; token?: string };
+  if (!response.ok) console.error("Daily API", path, response.status, JSON.stringify(payload));
   return { ok: response.ok, status: response.status, payload };
 }
 
@@ -76,41 +77,83 @@ async function getRoom(name: string): Promise<RoomState> {
     });
     const payload = (await response.json().catch(() => ({}))) as { config?: { exp?: number }; error?: string; info?: string };
     if (response.status === 404) return { ok: false, missing: true, error: "missing" };
-    if (!response.ok) return { ok: false, missing: false, error: payload.error || payload.info || copy.dailyUsageUnknown };
+    if (!response.ok) {
+      console.error("Daily API", `/rooms/${name}`, response.status, JSON.stringify(payload));
+      return { ok: false, missing: false, error: payload.error || payload.info || copy.dailyUsageUnknown };
+    }
     return { ok: true, exp: payload.config?.exp ?? null };
   } catch {
     return { ok: false, missing: false, error: copy.dailyUsageUnknown };
   }
 }
 
+const roomProperties = (expUnix: number) => ({
+  exp: expUnix,
+  enable_screenshare: true,
+  enable_chat: false,
+  enable_recording: false,
+  enable_prejoin_ui: false,
+});
+
 async function writeRoomExp(name: string, expUnix: number) {
-  const updated = await dailyFetch(`/rooms/${encodeURIComponent(name)}`, { properties: { exp: expUnix } });
+  const updated = await dailyFetch(`/rooms/${encodeURIComponent(name)}`, { properties: roomProperties(expUnix) });
   if (!updated.ok) return fail(updated.payload.error || updated.payload.info || "Could not update the video room.");
   return { ok: true as const, name };
+}
+
+async function deleteRoom(name: string) {
+  const response = await fetch(`${BASE}/rooms/${encodeURIComponent(name)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${process.env.DAILY_API_KEY}` },
+  });
+  if (response.status === 404) return;
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) console.error("Daily API", `DELETE /rooms/${name}`, response.status, JSON.stringify(payload));
+}
+
+async function createRoom(name: string, expUnix: number) {
+  const created = await dailyFetch("/rooms", {
+    name,
+    privacy: "private",
+    properties: roomProperties(expUnix),
+  });
+  if (created.ok) return { ok: true as const, name };
+  const info = `${created.payload.error ?? ""} ${created.payload.info ?? ""}`;
+  if (!/already exists/i.test(info)) return fail(created.payload.error || created.payload.info || "Could not create the video room.");
+  return writeRoomExp(name, expUnix);
 }
 
 export async function ensureRoom(name: string, expUnix: number, update: "keep" | "set" = "keep") {
   if (!hasDaily()) return fail("Daily.co is not configured.");
   const existing = await getRoom(name);
+  const now = Math.floor(Date.now() / 1000);
+  if (existing.ok && existing.exp != null && existing.exp <= now) {
+    await deleteRoom(name);
+    return createRoom(name, expUnix);
+  }
   if (existing.ok) {
-    if (update === "keep" || existing.exp === expUnix) return { ok: true as const, name };
-    return writeRoomExp(name, expUnix);
+    if (update === "keep") return { ok: true as const, name };
+    if (existing.exp === expUnix) {
+      const aligned = await writeRoomExp(name, expUnix);
+      if (aligned.ok) return aligned;
+    }
+    const updated = await writeRoomExp(name, expUnix);
+    if (updated.ok) return updated;
+    await deleteRoom(name);
+    return createRoom(name, expUnix);
   }
   if (!existing.missing) return fail(existing.error);
-  const created = await dailyFetch("/rooms", {
-    name,
-    privacy: "private",
-    properties: {
-      exp: expUnix,
-      enable_screenshare: true,
-      enable_chat: false,
-      enable_recording: false,
-    },
-  });
-  if (created.ok) return { ok: true as const, name };
-  const info = `${created.payload.error ?? ""} ${created.payload.info ?? ""}`;
-  if (!/already exists/i.test(info)) return fail(created.payload.error || created.payload.info || "Could not create the video room.");
-  return update === "set" ? writeRoomExp(name, expUnix) : { ok: true as const, name };
+  return createRoom(name, expUnix);
+}
+
+/** Creates a private room and deletes it. Used by /tech/health. */
+export async function probeDailyRoom() {
+  const name = `health-${Date.now().toString(36)}`;
+  const exp = Math.floor(Date.now() / 1000) + 120;
+  const created = await ensureRoom(name, exp, "set");
+  if (!created.ok) return created;
+  await deleteRoom(name);
+  return { ok: true as const };
 }
 
 async function listMonthMeetings(now: number) {

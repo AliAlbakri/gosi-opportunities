@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { DemoButton } from "@/components/shared/demo-toast";
 import { BrandIcon } from "@/components/phone/brand-icon";
 import { IphoneFrame } from "@/components/phone/iphone-frame";
-import { useLiveUpdates } from "@/lib/realtime-client";
+import { useAppOffset, useLiveUpdates } from "@/lib/realtime-client";
 import { formatClock } from "@/lib/format";
 
 // Contributions, Help, and More have no official GOSI icon. Lucide is the substitute.
@@ -32,17 +32,19 @@ export function PhoneShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { banner } = useLiveUpdates(personaId);
+  const clockOffset = useAppOffset(offset);
+  const { banner, live } = useLiveUpdates(personaId);
   const [now, setNow] = useState(() => Date.now() + offset * 1000);
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now() + offset * 1000), 1000);
+    const timer = setInterval(() => setNow(Date.now() + clockOffset * 1000), 1000);
+    setNow(Date.now() + clockOffset * 1000);
     return () => clearInterval(timer);
-  }, [offset]);
+  }, [clockOffset]);
   const showTabs = ["/home", "/more", "/notifications"].some((part) => pathname.endsWith(part));
 
   return (
     <IphoneFrame responsive>
-      <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-gosi-midnight-10">
+      <div data-live={live ? "1" : "0"} className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-gosi-midnight-10">
         <div className="relative flex items-center justify-between px-6 pb-1 pt-3 text-[13px] font-semibold text-gosi-rich-blue">
           <span className="w-14">{formatClock(new Date(now))}</span>
           <span className="absolute left-1/2 top-2 h-7 w-[108px] -translate-x-1/2 rounded-full bg-black" aria-hidden />

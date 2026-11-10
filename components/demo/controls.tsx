@@ -16,11 +16,11 @@ const shifts = [
 export function DemoControls({
   appNow,
   realNow,
-  nextLabel,
+  next,
 }: {
   appNow: string;
   realNow: string;
-  nextLabel: string | null;
+  next: { label: string; when: string; seeker: string; retiree: string; seekerHref: string; retireeHref: string } | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -41,7 +41,19 @@ export function DemoControls({
           {copy.clockReal} {formatLong(realNow)}
         </p>
       </div>
-      <p>{nextLabel ? `${copy.clockNext}: ${nextLabel}` : copy.clockNone}</p>
+      <div className="space-y-2">
+        <p>{next ? `${copy.clockNext}: ${next.label}` : copy.clockNone}</p>
+        {next && (
+          <>
+            <p className="text-sm">{next.when}</p>
+            <p className="text-sm">{next.seeker} · {next.retiree}</p>
+            <p className="flex flex-wrap gap-4 text-sm">
+              <a className="text-gosi-blue" href={next.seekerHref} target="_blank" rel="noreferrer">Open in seeker phone</a>
+              <a className="text-gosi-blue" href={next.retireeHref} target="_blank" rel="noreferrer">Open in retiree phone</a>
+            </p>
+          </>
+        )}
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {shifts.map(([label, seconds, hint]) => (
           <button key={label} type="button" disabled={pending} className="rounded-2xl bg-gosi-midnight-10 px-4 py-3 text-left" onClick={() => run(() => shiftClockAction(seconds))}>

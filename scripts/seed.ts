@@ -561,7 +561,6 @@ export async function seedDemo() {
     seeker_need: "I want to practise spoken English before a work presentation.",
     seeker_goal: "A short plan for how to introduce my project.",
     terms_accepted_at: appNow.toISOString(),
-    daily_room_name: "opp-seedupcoming",
     created_at: appNow.toISOString(),
   });
   bookings.push({
@@ -580,34 +579,31 @@ export async function seedDemo() {
     created_at: appNow.toISOString(),
   });
 
-  let cursor = addRiyadhDays(atRiyadh(riyadhParts(appNow).y, riyadhParts(appNow).m, riyadhParts(appNow).d, 12), 1);
-  const horizon = appNow.getTime() + 30 * 86400000;
-  let n = 0;
-  while (cursor.getTime() < horizon && n < 40) {
-    const parts = riyadhParts(cursor);
-    if (parts.weekday <= 4) {
-      const slot = atRiyadh(parts.y, parts.m, parts.d, 9);
-      if (slot.getTime() >= appNow.getTime() + 24 * 3600000) {
-        bookings.push({
-          id: uuid(`full:${n}`),
-          seeker_id: pid("seek-reem"),
-          retiree_id: pid("ret-nasser"),
-          retiree_service_type_id: rst("ret-nasser", "acc-statements"),
-          starts_at: slot.toISOString(),
-          ends_at: new Date(slot.getTime() + 3600000).toISOString(),
-          status: "confirmed",
-          is_paid: false,
-          price: 0,
-          seeker_need: "A walkthrough of a simple statement.",
-          seeker_goal: "Read the main lines with confidence.",
-          terms_accepted_at: appNow.toISOString(),
-          created_at: appNow.toISOString(),
-        });
-        n += 1;
-      }
-    }
-    cursor = addRiyadhDays(atRiyadh(parts.y, parts.m, parts.d, 12), 1);
-  }
+  const reemDays = [
+    { days: 1, hour: 9 },
+    { days: 4, hour: 14 },
+    { days: 8, hour: 11 },
+  ];
+  reemDays.forEach((plan, index) => {
+    const day = addRiyadhDays(atRiyadh(riyadhParts(appNow).y, riyadhParts(appNow).m, riyadhParts(appNow).d, 12), plan.days);
+    const parts = riyadhParts(day);
+    const slot = atRiyadh(parts.y, parts.m, parts.d, plan.hour);
+    bookings.push({
+      id: uuid(`full:${index}`),
+      seeker_id: pid("seek-reem"),
+      retiree_id: pid("ret-nasser"),
+      retiree_service_type_id: rst("ret-nasser", "acc-statements"),
+      starts_at: slot.toISOString(),
+      ends_at: new Date(slot.getTime() + 3600000).toISOString(),
+      status: "confirmed",
+      is_paid: false,
+      price: 0,
+      seeker_need: "A walkthrough of a simple statement.",
+      seeker_goal: "Read the main lines with confidence.",
+      terms_accepted_at: appNow.toISOString(),
+      created_at: appNow.toISOString(),
+    });
+  });
 
   const releasedStart = onTheHour(new Date(appNow.getTime() - 5 * 86400000));
   const releasedId = uuid("paid:released");

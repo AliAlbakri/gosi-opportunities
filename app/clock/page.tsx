@@ -15,7 +15,6 @@ export default async function ClockPage() {
   if (!(await databaseReady())) return <SchemaScreen />;
   await processDueLazy();
   const [appNow, next] = await Promise.all([getAppNow(), nextBookingLabel()]);
-  const nextLabel = next ? `${next.seeker} with ${next.retiree} · ${formatWhen(next.startsAt)}` : null;
   return (
     <main className="min-h-dvh bg-gosi-midnight-10 p-6 text-gosi-rich-blue">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -26,7 +25,18 @@ export default async function ClockPage() {
         <Link className="text-sm text-gosi-blue" href="/">{copy.clockHome}</Link>
       </header>
       <p className="mb-6 max-w-xl text-sm text-gosi-midnight-80">{copy.clockBody}</p>
-      <DemoControls appNow={appNow.toISOString()} realNow={new Date().toISOString()} nextLabel={nextLabel} />
+      <DemoControls
+        appNow={appNow.toISOString()}
+        realNow={new Date().toISOString()}
+        next={next ? {
+          label: `${next.seeker} with ${next.retiree} · ${formatWhen(next.startsAt)}`,
+          when: formatWhen(next.startsAt),
+          seeker: next.seeker,
+          retiree: next.retiree,
+          seekerHref: `/phone/${next.seekerSlug}/opportunities/bookings/${next.id}`,
+          retireeHref: `/phone/${next.retireeSlug}/opportunities/bookings/${next.id}`,
+        } : null}
+      />
     </main>
   );
 }

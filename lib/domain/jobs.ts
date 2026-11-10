@@ -4,7 +4,7 @@ import { getPayment, recordFailed, releasePayment, refundBooking, setReleaseDue 
 import { settlementMonthDue } from "@/lib/domain/rules";
 import { getSettings } from "@/lib/domain/settings";
 import { runSettlement } from "@/lib/domain/settlement";
-import { formatWhen } from "@/lib/format";
+import { formatClock } from "@/lib/format";
 import { admin } from "@/lib/supabase/admin";
 
 let lastLazy = 0;
@@ -38,9 +38,18 @@ async function expireHolds(appNow: Date) {
   }
 }
 
+async function firstNames(ids: string[]) {
+  const unique = [...new Set(ids)];
+  if (!unique.length) return new Map<string, string>();
+  const { data, error } = await admin().from("gosi_people").select("id, first_name").in("id", unique);
+  if (error) throw new Error(error.message);
+  return new Map((data ?? []).map((row) => [row.id as string, row.first_name as string]));
+}
+
 async function sendReminders(appNow: Date) {
   const { data, error } = await admin().from("bookings").select("*").eq("status", "confirmed");
   if (error) throw new Error(error.message);
+  const names = await firstNames((data ?? []).flatMap((booking) => [booking.seeker_id, booking.retiree_id]));
   for (const booking of data ?? []) {
     const start = new Date(booking.starts_at).getTime();
     if (appNow.getTime() >= start) continue;
@@ -48,26 +57,27 @@ async function sendReminders(appNow: Date) {
     const due: string[] = [];
     if (appNow.getTime() >= start - 24 * 60 * 60 * 1000 && !sent.has("24h")) due.push("24h");
     if (appNow.getTime() >= start - 60 * 60 * 1000 && !sent.has("1h")) due.push("1h");
+    if (appNow.getTime() >= start - 10 * 60 * 1000 && !sent.has("open")) due.push("open");
     if (!due.length) continue;
-    const when = formatWhen(booking.starts_at);
+    const clock = formatClock(booking.starts_at);
+    const opens = formatClock(new Date(start - 10 * 60 * 1000).toISOString());
+    const seeker = names.get(booking.seeker_id) ?? "Someone";
+    const retiree = names.get(booking.retiree_id) ?? "your retiree";
+    const link = (id: string) => `/phone/${id}/opportunities/bookings/${booking.id}`;
+    const lobby = (id: string) => `/phone/${id}/opportunities/bookings/${booking.id}/lobby`;
     for (const kind of due) {
-      const title = kind === "24h" ? "Your session starts in 24 hours" : "Your session starts in 1 hour";
-      const body = `Session at ${when}. You can join from 10 minutes before the start.`;
-      await notifyPerson(booking.seeker_id, {
-        title,
-        body,
-        linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}`,
-      });
-      await notifyPerson(booking.retiree_id, {
-        title,
-        body,
-        linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}`,
-      });
+      if (kind === "24h") {
+        await notifyPerson(booking.seeker_id, { title: `Tomorrow at ${clock} with ${retiree}`, body: "Test your camera before you join.", linkFor: link });
+        await notifyPerson(booking.retiree_id, { title: `Tomorrow at ${clock} with ${seeker}`, body: "Review what they need.", linkFor: link });
+      } else if (kind === "1h") {
+        await notifyPerson(booking.seeker_id, { title: `Starts in 1 hour with ${retiree}`, body: `You can join from ${opens}.`, linkFor: link });
+        await notifyPerson(booking.retiree_id, { title: `Starts in 1 hour with ${seeker}`, body: `You can join from ${opens}.`, linkFor: link });
+      } else {
+        await notifyPerson(booking.seeker_id, { title: "Your session is open", body: "Join now", linkFor: lobby });
+        await notifyPerson(booking.retiree_id, { title: "Your session is open", body: "Join now", linkFor: lobby });
+      }
     }
-    await admin()
-      .from("bookings")
-      .update({ reminders_sent: [...sent, ...due] })
-      .eq("id", booking.id);
+    await admin().from("bookings").update({ reminders_sent: [...sent, ...due] }).eq("id", booking.id);
   }
 }
 
@@ -83,6 +93,7 @@ async function markNoShows(appNow: Date) {
   if (error) throw new Error(error.message);
   const due = (data ?? []).filter((booking) => appNow.getTime() >= new Date(booking.starts_at).getTime() + 15 * 60 * 1000);
   const events = await eventsFor(due.map((booking) => booking.id));
+  const names = await firstNames(due.flatMap((booking) => [booking.seeker_id, booking.retiree_id]));
   for (const booking of due) {
     const rows = events.filter((event) => event.booking_id === booking.id && event.event === "joined");
     const retireeJoined = rows.some((event) => event.person_id === booking.retiree_id);
@@ -98,9 +109,8 @@ async function markNoShows(appNow: Date) {
       .maybeSingle();
     if (!updated) continue;
     if (booking.is_paid) await refundBooking(booking.id, status);
-    const body = retireeJoined
-      ? "The seeker did not join within 15 minutes. The session is marked as missed."
-      : "The retiree did not join within 15 minutes. The session is marked as missed.";
+    const missed = names.get(retireeJoined ? booking.seeker_id : booking.retiree_id) ?? (retireeJoined ? "The seeker" : "The retiree");
+    const body = `${missed} did not join within 15 minutes.`;
     await notifyPerson(booking.seeker_id, {
       title: "Session marked as missed",
       body,
@@ -114,7 +124,7 @@ async function markNoShows(appNow: Date) {
   }
 }
 
-async function finish(booking: { id: string; seeker_id: string; is_paid: boolean }, completedAt: Date) {
+async function finish(booking: { id: string; seeker_id: string; retiree_id: string; is_paid: boolean }, completedAt: Date) {
   const { data: updated } = await admin()
     .from("bookings")
     .update({ status: "completed", completed_at: completedAt.toISOString() })
@@ -128,6 +138,11 @@ async function finish(booking: { id: string; seeker_id: string; is_paid: boolean
     title: "How was your session?",
     body: "A short rating helps other seekers and stays anonymous to the retiree.",
     linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}/feedback`,
+  });
+  await notifyPerson(booking.retiree_id, {
+    title: "Session complete",
+    body: "Thank you for the session.",
+    linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}/done`,
   });
 }
 

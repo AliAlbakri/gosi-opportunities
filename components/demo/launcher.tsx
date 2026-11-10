@@ -88,7 +88,7 @@ function PhoneColumn({ title, value, options, onChange }: { title: string; value
       </div>
       <IphoneFrame>
         {value ? (
-          <iframe title={title} src={`/phone/${value}/home`} className="block h-[844px] w-[390px] border-0 bg-white" allow="camera; microphone; display-capture; autoplay" />
+          <iframe title={title} src={`/phone/${value}/home`} className="block h-[844px] w-[390px] border-0 bg-white" allow="camera; microphone; display-capture; autoplay; fullscreen" />
         ) : (
           <div className="grid h-[844px] place-items-center bg-white text-sm">Reset demo data to load personas.</div>
         )}

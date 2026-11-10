@@ -21,6 +21,7 @@ export async function decorateBookings(bookings: Booking[]) {
     ...booking,
     seekerName: firstName.get(booking.seeker_id) ?? "Seeker",
     retireeName: personName.get(booking.retiree_id) ?? "Retiree",
+    retireeFirst: firstName.get(booking.retiree_id) ?? "Retiree",
     serviceName: typeName.get(typeByRst.get(booking.retiree_service_type_id) ?? "") ?? "Session",
     serviceShort: typeShort.get(typeByRst.get(booking.retiree_service_type_id) ?? "") ?? "Session",
     rated: rated.has(booking.id),

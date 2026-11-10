@@ -8,5 +8,5 @@ export default async function FeedbackPage({ params }: { params: Promise<{ perso
   const user = await requireUser(personaId);
   const booking = await getBooking(bookingId);
   if (!user || !booking || booking.seeker_id !== user.person.id) notFound();
-  return <FeedbackForm personaId={personaId} bookingId={bookingId} seekerId={user.person.id} />;
+  return <FeedbackForm personaId={personaId} bookingId={bookingId} seekerId={user.person.id} retireeId={booking.retiree_id} />;
 }

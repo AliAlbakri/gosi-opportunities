@@ -1,5 +1,6 @@
 "use client";
 
+import { Calendar } from "lucide-react";
 import { copy } from "@/lib/copy";
 
 function stamp(date: string) {
@@ -10,10 +11,12 @@ export function AddToCalendar({
   start,
   end,
   title,
+  icon = false,
 }: {
   start: string;
   end: string;
   title: string;
+  icon?: boolean;
 }) {
   function download() {
     const body = [
@@ -33,6 +36,13 @@ export function AddToCalendar({
     link.download = "session.ics";
     link.click();
     URL.revokeObjectURL(url);
+  }
+  if (icon) {
+    return (
+      <button type="button" aria-label={copy.seekerUi.addCalendar} className="grid h-10 w-10 place-items-center" onClick={download}>
+        <Calendar size={20} strokeWidth={1.75} />
+      </button>
+    );
   }
   return (
     <button type="button" className="text-[15px] font-semibold text-gosi-blue" onClick={download}>

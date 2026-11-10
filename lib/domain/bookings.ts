@@ -48,14 +48,18 @@ async function attachRoom(bookingId: string, endsAt: Date) {
 
 async function notifyBooked(booking: Booking) {
   const when = formatWhen(booking.starts_at);
+  const { data: people } = await admin().from("gosi_people").select("id, first_name").in("id", [booking.seeker_id, booking.retiree_id]);
+  const name = new Map((people ?? []).map((row) => [row.id, row.first_name as string]));
+  const seeker = name.get(booking.seeker_id) ?? "Someone";
+  const retiree = name.get(booking.retiree_id) ?? "your retiree";
   await notifyPerson(booking.seeker_id, {
-    title: `Session booked: ${when}`,
+    title: `Session booked: ${when} with ${retiree}`,
     body: "Your session is confirmed. You can join from 10 minutes before the start.",
     linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}`,
   });
   await notifyPerson(booking.retiree_id, {
-    title: `Session booked: ${when}`,
-    body: "A seeker booked a session with you.",
+    title: `New booking: ${seeker}, ${when}`,
+    body: booking.seeker_need,
     linkFor: (id) => `/phone/${id}/opportunities/bookings/${booking.id}`,
   });
 }

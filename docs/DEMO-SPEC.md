@@ -181,22 +181,38 @@ From a past booking or the session-end screen. Reason list (radio) + description
 
 ## 6. Sessions and cancellation (stage 8)
 
+One phase, from `lib/domain/sessionPhase.ts`, drives every card, the booking detail, the home card, the retiree dashboard, and the join window. Times are app time in Asia/Riyadh. `T` is the scheduled start.
+
+| Phase | When | Join | Cancel |
+|---|---|---|---|
+| upcoming | more than 24h before T | locked, with the opening time | allowed |
+| soon | 24h until 10 min before T | locked, with a countdown | allowed; under 3h shows the late-cancel warning |
+| open | 10 min before T until T | Join now | allowed (late) |
+| live | T until T+60 | Join now, or Rejoin if you have already joined | not allowed |
+| overtime | T+60 until T+90 while the booking is still confirmed | Rejoin | not allowed |
+| closed | after T+90, or once the session is completed | none | none |
+| missed, cancelled, completed | from the booking status | none | none |
+
 ### 6.1 Video (Daily.co)
-- On booking confirm, create a private Daily room via REST (`name = opp-{bookingId8}`, `privacy: private`, `exp = ends_at + 3h`, `enable_screenshare: true`, chat off, recording off). Create a meeting token per participant on Join (`user_name`, `exp`).
-- Join opens an in-phone call screen embedding Daily Prebuilt (call frame) inside the phone viewport, with a top bar: Service Type, a session timer counting from scheduled start, and "Scheduled time: 1 hour".
-- Screen sharing on; no file transfer/chat.
-- Log `session_events` on `joined-meeting` and `left-meeting` client events (POST to `/api/sessions/[bookingId]/event`, server stamps `app_now()`).
-- **At 60 minutes** (scheduled end, app time): in-call banner to both: "Scheduled time has ended. You can continue." If the retiree has another booking starting at that time, add "Your next session starts now" for the retiree.
-- Leaving never ends the call for the other party. **Session completes** when the scheduled end has passed and both parties have left (`completed_at = time of last left`).
-- Join is allowed from 10 min before start until scheduled end + 30 min.
+- On booking confirm, create a private Daily room via REST (`name = opp-{bookingId8}`, `privacy: private`, `enable_screenshare: true`, chat off, recording off).
+- Join buttons open the lobby. The meeting token is created only when the person presses **Join session** (`user_name` is the first name). Room and token expiry are real now plus 3 hours. Daily is not given an `nbf`. The app, using app time, decides when Join is allowed.
+- The lobby shows a local camera preview, mic and camera toggles, a mic level, and whether the other person is already in the call.
+- The call embeds Daily Prebuilt in the phone viewport under the status bar, themed with the GOSI colours. Our bar shows the short service name, a timer from the scheduled start, and a "1 hour" pill that turns amber in the last 5 minutes. Chat and the people list stay off. Screen share stays on; on a phone the lobby says it works best on a computer.
+- The demo-home phone iframes allow `camera; microphone; display-capture; autoplay; fullscreen`.
+- Log `session_events` on `joined-meeting` and `left-meeting` (POST `/api/sessions/[bookingId]/event`, server stamps app time) and broadcast `presence` on both persona channels.
+- **At 60 minutes**: dismissible banner "Scheduled time has ended. You can keep going if you both want to." If the retiree has another booking starting then, add "Your next session starts now".
+- Leave asks for confirmation ("Leaving won't end it for {name}. You can rejoin until {end + 30 min}."), then opens "You left the session" with Rejoin and I'm done. A seeker who is done goes to feedback and a thanks screen. A retiree who is done sees "Session complete".
+- **Session completes** when the scheduled end has passed and both parties have left (`completed_at = time of last left`). A straggler still in the call at `ends_at + 3h` is completed then.
+- "Jump to next booking" lands 5 minutes before the start, inside the open phase, so Join is enabled in both phones.
 
 ### 6.2 No-shows (15-minute rule)
 At `starts_at + 15 min` (app time), for confirmed bookings:
-- Retiree has no `joined` event → `no_show_retiree` (recorded as missed session; refund if paid; notify both).
+- Retiree has no `joined` event → `no_show_retiree` (recorded as missed session; refund if paid; notify both, naming who did not join).
 - Else seeker has no `joined` event → `no_show_seeker` (recorded against seeker; **refund in full if paid**; notify both).
 
 ### 6.3 Cancellation
-Either party, up to the session start (Cancel button disappears at start).
+Either party until the session starts. The button is on the booking detail and hides once the session is live.
+- More than 24h before: no warning. Under 3h: the late-cancel warning. A retiree also sees "This will be recorded on your profile".
 - ≥ 3h before start: no record. < 3h: `late_cancel = true` (recorded against the cancelling party).
 - Paid: **always full refund** to the seeker, whoever cancels and whenever.
 - Notify the other party (seeker gets "Book another slot" link when the retiree cancels).
@@ -267,9 +283,9 @@ Desktop layout: left sidebar (GOSI wordmark, operator name), white content area,
 - All rule logic uses **app time** = `app_now()` in SQL / `getAppNow()` in TS (real now + `demo_clock_offset_seconds`). Never use `new Date()` or `now()` for business rules. UI clocks show app time.
 - **Job processor** `processDue()` (idempotent, server-side TS, single transaction per item), steps in order:
   1. Expire `pending_payment` bookings past `hold_expires_at`.
-  2. Send 24h and 1h session reminders (tracked in `bookings.reminders_sent`).
+  2. Send the 24h, 1h, and 10-minute (join opens) reminders (tracked in `bookings.reminders_sent`). The 10-minute reminder links to the lobby.
   3. Mark no-shows at `starts_at + 15 min` (6.2), refund if paid.
-  4. Complete sessions where the scheduled end has passed and both parties have left; set `release_due_at = completed_at + 48h` on held payments; send the feedback prompt to the seeker.
+  4. Complete sessions where the scheduled end has passed and both parties have left; set `release_due_at = completed_at + 48h` on held payments; ask the seeker "How was your session?" and tell the retiree "Session complete".
   5. Auto-complete stragglers: confirmed bookings whose `ends_at + 3h` has passed with both joined but no final `left` (user closed the tab): `completed_at = ends_at`.
   6. Release held payments where `release_due_at <= app now` and there's no open dispute.
   7. Monthly settlement if app month > `last_settlement_period` month.
@@ -287,11 +303,17 @@ Desktop layout: left sidebar (GOSI wordmark, operator name), white content area,
 | Service Type approved | Retiree | "{Service Type}" is approved | retiree status |
 | Service Type not approved | Retiree | Action needed: "{Service Type}" | retiree status |
 | Go-live complete | Retiree | You're live on GOSI Opportunities | retiree home |
-| Booking confirmed | Seeker + Retiree | Session booked: {date time} | booking |
-| Reminder 24h / 1h | Seeker + Retiree | Your session starts in 24 hours / 1 hour | booking |
+| Booking confirmed | Seeker | Session booked: {date time} with {retiree} | booking |
+| Booking confirmed | Retiree | New booking: {seeker}, {date time} | booking |
+| Reminder 24h | Seeker | Tomorrow at {time} with {retiree} | booking |
+| Reminder 24h | Retiree | Tomorrow at {time} with {seeker} | booking |
+| Reminder 1h | Both | Starts in 1 hour with {name} | booking |
+| Join opens (10 min) | Both | Your session is open. Join now | lobby |
+| Other person joins first | The one still out | {Name} is waiting for you | lobby |
 | Cancelled by other party | Other party | Session cancelled (+ "Book another slot" for seeker) | booking / browse |
 | No-show | Both | Session marked as missed | booking |
 | Session completed | Seeker | How was your session? | feedback |
+| Session completed | Retiree | Session complete | session done |
 | Ops note | Retiree | A note from GOSI | notes |
 | Paused / restored | Retiree | Your profile has been paused / is active again | retiree home |
 | Retiree paused with bookings | Seeker | Your session was cancelled. Book another | browse |

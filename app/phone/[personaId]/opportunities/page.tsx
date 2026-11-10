@@ -14,8 +14,10 @@ import { getAppNow } from "@/lib/domain/clock";
 import { catalog, listRetireeCards } from "@/lib/domain/discovery";
 import { decorateBookings } from "@/lib/domain/hydrate";
 import { requireUser } from "@/lib/domain/personas";
+import { formatRemain, getSessionPhase } from "@/lib/domain/sessionPhase";
 import { DAY_MS } from "@/lib/domain/rules";
-import { ageInRiyadh, countLabel, formatClock, relativeTo } from "@/lib/format";
+import { ageInRiyadh, countLabel, formatClock, relativeTo, TZ } from "@/lib/format";
+import { formatInTimeZone } from "date-fns-tz";
 import { serviceIcons } from "@/lib/phone-icons";
 import { admin } from "@/lib/supabase/admin";
 import type { Booking } from "@/lib/types";
@@ -32,9 +34,10 @@ export default async function BrowsePage({ params }: { params: Promise<{ persona
   const base = `/phone/${personaId}/opportunities`;
   const { categories, serviceTypes, paidEnabled } = await catalog();
   const { cards } = await listRetireeCards({});
-  const { data: upcomingRows } = await admin().from("bookings").select("*").eq("seeker_id", user.person.id).in("status", ["confirmed", "pending_payment"]).gt("starts_at", appNow.toISOString()).order("starts_at");
+  const windowStart = new Date(appNow.getTime() - 30 * 60 * 1000).toISOString();
+  const { data: upcomingRows } = await admin().from("bookings").select("*").eq("seeker_id", user.person.id).in("status", ["confirmed", "pending_payment"]).gt("ends_at", windowStart).order("starts_at");
   const upcoming = await decorateBookings((upcomingRows ?? []) as Booking[]);
-  const next = upcoming[0];
+  const next = upcoming.find((row) => row.status === "pending_payment" || getSessionPhase({ status: row.status, startsAt: row.starts_at, endsAt: row.ends_at, seekerId: row.seeker_id, retireeId: row.retiree_id, youId: user.person.id }, [], appNow).join !== "none");
   const { count: bookingCount } = await admin().from("bookings").select("id", { count: "exact", head: true }).eq("seeker_id", user.person.id);
   const week = cards.filter((card) => card.next && card.next.getTime() <= appNow.getTime() + 7 * DAY_MS);
   const top = cards.filter((card) => (card.rating ?? 0) >= 4.5);
@@ -42,7 +45,11 @@ export default async function BrowsePage({ params }: { params: Promise<{ persona
     .map((type) => ({ type, count: cards.filter((card) => card.services.some((service) => service.id === type.id)).length }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
-  const canJoin = next && next.status === "confirmed" && appNow.getTime() >= new Date(next.starts_at).getTime() - 10 * 60 * 1000;
+  const nextPhase = next ? getSessionPhase({ status: next.status, startsAt: next.starts_at, endsAt: next.ends_at, seekerId: next.seeker_id, retireeId: next.retiree_id, youId: user.person.id }, [], appNow) : null;
+  const live = nextPhase?.join === "now" || nextPhase?.join === "rejoin";
+  const lockedLabel = nextPhase?.phase === "soon"
+    ? `${copy.session.joinIn} ${formatRemain(nextPhase.opensAt.getTime() - appNow.getTime())}`
+    : nextPhase ? `${copy.session.joinAt} ${formatInTimeZone(nextPhase.opensAt, TZ, "HH:mm")}` : copy.seekerUi.details;
   return (
     <div className="pb-8 text-gosi-rich-blue">
       <div className="relative overflow-hidden bg-gosi-rich-blue text-white">
@@ -56,7 +63,7 @@ export default async function BrowsePage({ params }: { params: Promise<{ persona
       </div>
       <div className="space-y-8 px-5 py-6">
         {next && (
-          <Link href={`${base}/bookings/${next.id}`} className="flex gap-3 rounded-[20px] bg-white p-3">
+          <Link href={live ? `${base}/bookings/${next.id}/lobby` : `${base}/bookings/${next.id}`} className={`flex gap-3 rounded-[20px] p-3 ${live ? "bg-gosi-vivid-green" : "bg-white"}`}>
             <DateBlock date={next.starts_at} />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
@@ -66,7 +73,10 @@ export default async function BrowsePage({ params }: { params: Promise<{ persona
               <span className="mt-1 block truncate text-[13px] text-gosi-midnight-50">{next.serviceShort}</span>
               <span className="mt-1 block text-[13px] font-semibold">{formatClock(next.starts_at)} · {relativeTo(next.starts_at, appNow)}</span>
             </span>
-            <span className={`self-center text-[15px] font-semibold ${canJoin ? "text-gosi-blue" : "text-gosi-midnight-50"}`}>{canJoin ? copy.join : copy.seekerUi.details}</span>
+            <span className={`inline-flex items-center gap-2 self-center text-[15px] font-semibold ${live ? "text-gosi-rich-blue" : "text-gosi-midnight-50"}`}>
+              {live && <span className="relative inline-flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gosi-rich-blue opacity-60" /><span className="relative h-2.5 w-2.5 rounded-full bg-gosi-rich-blue" /></span>}
+              {live ? (nextPhase?.join === "rejoin" ? copy.session.rejoin : copy.session.joinNow) : nextPhase?.join === "locked" ? lockedLabel : copy.seekerUi.details}
+            </span>
           </Link>
         )}
         <HowItWorks show={!bookingCount} />

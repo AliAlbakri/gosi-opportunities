@@ -242,20 +242,29 @@ One `AppHeader` only (back button + share/heart icon buttons on the right, title
 - **Success screen**: animated check, "You're booked", details card, **Add to calendar** (downloads an .ics), "What to expect" tips (find a quiet place, test your camera, join from My bookings 10 minutes before), **View my bookings** / **Back to Opportunities**.
 
 ### 5.7 My bookings and booking detail
-Full-bleed header. Upcoming / Past tabs show counts. The last tab is kept in `sessionStorage`. Upcoming is soonest first. When the first start is inside 24 hours, that card is the larger "Next up" card. Past sessions group by month, newest first.
+Full-bleed header, title "Your session". Upcoming / Past tabs show counts. The last tab is kept in `sessionStorage`. Upcoming is soonest first and stays there through the rejoin window (until 30 minutes after the end). When the first start is inside 24 hours, that card is the larger "Next up" card.
 
-Upcoming card: date block, avatar 32, name, short service name, time range, status pill, then Join and Details. Join stays visible and reads "Opens 10 min before" until the window. Cancel is not on the card.
+Upcoming card: date block, avatar 32, name, short service name, time range, status pill. Join is locked with the opening time until 10 minutes before, then a green **Join now** with a pulse dot that opens the lobby. Cancel is not on the seeker card.
 
 Past card: avatar 40, name, short name, date and time, status (Completed, Cancelled with "by you" or "by retiree", Missed with who did not join). One action: "Rate session" when completed and unrated, stars plus "Book again" when rated, otherwise "Book again". Report is not on the card.
 
-Detail: header card, countdown, tips, "Add to calendar" (.ics), read-only need and goal, timeline Booked → Reminder sent → Session → Feedback. Sticky footer for an upcoming session: Join and "Cancel booking". The cancel sheet shows the policy, "This will be recorded as a late cancellation" inside 3 hours, and "Paid sessions are refunded in full" when the session is paid. Past footer: "Book again", and "Report a problem" only for a completed session or a retiree no-show. Empty upcoming uses the booking illustration. Empty past is one line.
+Detail is driven by the session phase. The status card is full width, radius 20:
+- More than 10 minutes before: Rich Blue, "Starts in …", date and time range, a locked Join with the opening time, and "You'll get a notification when it opens."
+- From 10 minutes before until 30 minutes after the end: Vivid Green, "Your session is open" (or "Session in progress" after the hour), whether the other person is waiting, and **Join now** / **Rejoin**.
+- Missed, cancelled, or completed: a neutral card with the outcome and one next step (Rate session, Book again, Report a problem, or Back to dashboard).
 
-The bookings page is shared. A retiree still sees the other person's name, the need, and Join/Cancel, without Rate or Report.
+Seeker detail also shows the retiree (avatar 56, verified, role, View profile), labelled rows (service short name, date, time in Riyadh, 1 hour, price, video call), a Get ready checklist with Test now, the seeker's notes, and Good to know. The header calendar icon downloads an .ics file. Cancel booking sits in the sticky footer until the session goes live. The sheet shows the policy, the late warning under 3 hours, and the refund line when the session is paid.
+
+Retiree detail uses the same phase card. "Prepare for {name}" puts the seeker's need and goal first. Cancelling inside 3 hours also says "This will be recorded on your profile".
+
+The home "Your next session" card and the retiree dashboard hero use the same phase: locked until the window, then green Join now. The bookings page is shared. A retiree still sees the other person's name and the need, without Rate or Report.
 
 ### 5.8 Sessions
-- **Pre-call lobby**: camera preview, mic/camera toggles, "Joining as Sara", session info, tips, **Join now**.
-- **In-call**: full phone viewport, top bar with service and timer, the 60-minute banner, leave confirmation sheet ("Leaving won't end the session for the other person").
-- **After the call (seeker)**: feedback flow, big tappable stars, "Did this help?" Yes/No, tag chips, optional review, **Submit** → thanks screen with **Book again**. Retiree after the call: simple "Session complete" screen back to dashboard.
+- **Device check** (anytime): camera preview, mic level, camera and mic toggles, a speaker test. "Everything works" is remembered on this phone. If permission is denied, a sheet explains how to allow the camera and microphone.
+- **Lobby**: full screen inside the phone, no tab bar. "Session with {name} · {service}", a live timer, a 3:4 camera preview, toggles, presence ("{name} is waiting" or "hasn't joined yet"), and **Join session**. The meeting token is requested only here.
+- **In-call**: Daily Prebuilt fills the phone under the status bar, in GOSI colours. Our bar shows the short service name, the elapsed time, and a "1 hour" pill that turns amber in the last 5 minutes. At the scheduled end, a dismissible banner. Leave confirms, then "You left the session" with Rejoin (until 30 minutes after the end) and I'm done.
+- **After the call (seeker)**: stars, "Did this help?", tags, optional review, then a thanks screen with **Book again** and **Back to Opportunities**.
+- **After the call (retiree)**: "Session complete", "Thank you for sharing your experience with {name}", **Back to dashboard**.
 
 ### 5.9 Under 18 and paused/blocked states
 Friendly full-screen states with illustration and clear copy; never a raw error.

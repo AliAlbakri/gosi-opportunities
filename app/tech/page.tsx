@@ -17,6 +17,7 @@ export default async function TechPage() {
       <h1 className="border-b-2 border-gosi-blue text-3xl">Tech configuration: paid sessions</h1>
       <p className="mt-2">Managed by the tech team. Not available in the ops console.</p>
       <a className="mt-2 inline-block text-sm text-gosi-blue" href="/clock">Demo clock</a>
+      <a className="ml-4 mt-2 inline-block text-sm text-gosi-blue" href="/tech/health">Health</a>
       <TechForm settings={settings} categories={categories} futurePaid={count} />
     </main>
   );

@@ -7,8 +7,8 @@ import { admin } from "@/lib/supabase/admin";
 
 async function commit(offset: number, action: string, details: Record<string, unknown>) {
   await setClockOffset(offset);
-  await processDue();
   await broadcast("demo", "clock.changed", { offset });
+  await processDue();
   await audit("system", action, "app_settings", "1", details);
 }
 
@@ -58,7 +58,7 @@ export async function nextBookingLabel() {
   const appNow = await getAppNow();
   const { data } = await admin()
     .from("bookings")
-    .select("starts_at, seeker_id, retiree_id")
+    .select("id, starts_at, seeker_id, retiree_id")
     .eq("status", "confirmed")
     .gt("starts_at", appNow.toISOString())
     .order("starts_at", { ascending: true })
@@ -70,6 +70,7 @@ export async function nextBookingLabel() {
   const { data: personas } = await admin().from("personas").select("id, person_id").in("person_id", [data.seeker_id, data.retiree_id]);
   const slug = new Map((personas ?? []).map((row) => [row.person_id, row.id]));
   return {
+    id: data.id as string,
     startsAt: data.starts_at as string,
     seeker: name.get(data.seeker_id) ?? "Seeker",
     retiree: name.get(data.retiree_id) ?? "Retiree",

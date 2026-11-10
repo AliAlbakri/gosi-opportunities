@@ -3,7 +3,9 @@ import { Star } from "lucide-react";
 import { BookingIllustration } from "@/components/illustrations/spots";
 import { Avatar, DateBlock, StatusPill } from "@/components/phone/ui/bits";
 import { copy } from "@/lib/copy";
-import { formatClock, formatDay, formatMonth, relativeTo } from "@/lib/format";
+import { formatRemain, getSessionPhase } from "@/lib/domain/sessionPhase";
+import { formatClock, formatDay, formatMonth, relativeTo, TZ } from "@/lib/format";
+import { formatInTimeZone } from "date-fns-tz";
 import type { Booking } from "@/lib/types";
 
 export type SeekerBooking = Booking & {
@@ -42,7 +44,15 @@ export function UpcomingList({ rows, personaId, appNow }: { rows: SeekerBooking[
       {rows.map((row, index) => {
         const start = new Date(row.starts_at).getTime();
         const soon = index === 0 && start - appNow.getTime() < 24 * 60 * 60 * 1000 && start >= appNow.getTime();
-        const canJoin = row.status === "confirmed" && appNow.getTime() >= start - 10 * 60 * 1000 && appNow.getTime() <= new Date(row.ends_at).getTime() + 30 * 60 * 1000;
+        const phase = getSessionPhase(
+          { status: row.status, startsAt: row.starts_at, endsAt: row.ends_at, seekerId: row.seeker_id, retireeId: row.retiree_id, youId: row.seeker_id },
+          [],
+          appNow,
+        );
+        const live = phase.join === "now" || phase.join === "rejoin";
+        const locked = phase.phase === "soon"
+          ? `${copy.session.joinIn} ${formatRemain(phase.opensAt.getTime() - appNow.getTime())}`
+          : `${copy.session.joinAt} ${formatInTimeZone(phase.opensAt, TZ, "HH:mm")}`;
         const state = statusOf(row);
         return (
           <article key={row.id} className={`rounded-[20px] bg-white ${soon ? "p-4" : "p-3"}`}>
@@ -63,10 +73,13 @@ export function UpcomingList({ rows, personaId, appNow }: { rows: SeekerBooking[
               </div>
             </div>
             <div className="mt-3 flex items-center gap-3">
-              {canJoin ? (
-                <Link href={`${base}/bookings/${row.id}/call`} className="inline-flex h-[52px] flex-1 items-center justify-center rounded-full bg-gosi-vivid-green px-4 text-[15px] font-semibold text-gosi-rich-blue">{copy.join}</Link>
+              {live ? (
+                <Link href={`${base}/bookings/${row.id}/lobby`} className="inline-flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-gosi-vivid-green px-4 text-[15px] font-semibold text-gosi-rich-blue">
+                  <span className="relative inline-flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gosi-rich-blue opacity-60" /><span className="relative h-2.5 w-2.5 rounded-full bg-gosi-rich-blue" /></span>
+                  {phase.join === "rejoin" ? copy.session.rejoin : copy.session.joinNow}
+                </Link>
               ) : (
-                <span className="inline-flex h-[52px] flex-1 items-center justify-center rounded-full bg-gosi-midnight-25 px-3 text-center text-[13px] font-semibold text-gosi-midnight-50">{copy.seekerUi.opens}</span>
+                <span className="inline-flex h-[52px] flex-1 items-center justify-center rounded-full bg-gosi-midnight-25 px-3 text-center text-[13px] font-semibold text-gosi-midnight-50">{locked}</span>
               )}
               <Link href={`${base}/bookings/${row.id}`} className="px-2 text-[15px] font-semibold text-gosi-blue">{copy.seekerUi.details}</Link>
             </div>

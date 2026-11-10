@@ -17,6 +17,8 @@ export const copy = {
   clockNone: "No upcoming confirmed session.",
   clockOpen: "Open demo clock",
   clockHome: "Back to demo home",
+  aloneRetiree: "Retiree phone",
+  aloneSeeker: "Seeker phone",
   clockHints: {
     hour: "Passes the one-hour reminder.",
     three: "A cancellation inside three hours is recorded as late.",

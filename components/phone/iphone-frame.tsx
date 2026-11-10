@@ -14,10 +14,13 @@ function Hardware({ className = "" }: { className?: string }) {
 export function IphoneFrame({
   children,
   responsive = false,
+  caption,
 }: {
   children: ReactNode;
   /** Bezel only from 500px up. Below that the glass fills the viewport, so an iframe does not nest a second phone. */
   responsive?: boolean;
+  /** Shown above the bezel when this phone is open on its own. Hidden inside the demo-home iframe. */
+  caption?: ReactNode;
 }) {
   if (!responsive) {
     return (
@@ -31,7 +34,8 @@ export function IphoneFrame({
   }
 
   return (
-    <div className="min-[500px]:grid min-[500px]:min-h-dvh min-[500px]:place-items-center min-[500px]:bg-[#e7e8ee] min-[500px]:p-6">
+    <div className="min-[500px]:flex min-[500px]:min-h-dvh min-[500px]:flex-col min-[500px]:items-center min-[500px]:justify-center min-[500px]:gap-4 min-[500px]:bg-[#e7e8ee] min-[500px]:p-6">
+      {caption ? <div className="hidden min-[500px]:block">{caption}</div> : null}
       <div className="relative max-[499px]:h-dvh max-[499px]:overflow-hidden min-[500px]:h-[892px] min-[500px]:w-[438px]">
         <Hardware className="max-[499px]:hidden" />
         <div className="h-full w-full min-[500px]:absolute min-[500px]:left-3 min-[500px]:top-3 min-[500px]:h-[868px] min-[500px]:w-[414px] min-[500px]:rounded-[54px] min-[500px]:bg-[#1c1c1e] min-[500px]:p-3 min-[500px]:shadow-[0_24px_60px_rgba(0,0,78,0.28)]">

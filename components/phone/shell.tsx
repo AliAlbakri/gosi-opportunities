@@ -9,6 +9,7 @@ import { BrandIcon } from "@/components/phone/brand-icon";
 import { IphoneFrame } from "@/components/phone/iphone-frame";
 import { useAppOffset, useLiveUpdates } from "@/lib/realtime-client";
 import { formatClock } from "@/lib/format";
+import { copy } from "@/lib/copy";
 
 // Contributions, Help, and More have no official GOSI icon. Lucide is the substitute.
 const tabs = [
@@ -23,11 +24,15 @@ export function PhoneShell({
   personaId,
   offset,
   unread,
+  name,
+  retiree,
   children,
 }: {
   personaId: string;
   offset: number;
   unread: number;
+  name: string;
+  retiree: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -35,6 +40,8 @@ export function PhoneShell({
   const clockOffset = useAppOffset(offset);
   const { banner, live } = useLiveUpdates(personaId);
   const [now, setNow] = useState(() => Date.now() + offset * 1000);
+  const [alone, setAlone] = useState(false);
+  useEffect(() => setAlone(window.top === window.self), []);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now() + clockOffset * 1000), 1000);
     setNow(Date.now() + clockOffset * 1000);
@@ -43,7 +50,15 @@ export function PhoneShell({
   const showTabs = ["/home", "/more", "/notifications"].some((part) => pathname.endsWith(part));
 
   return (
-    <IphoneFrame responsive>
+    <IphoneFrame
+      responsive
+      caption={alone ? (
+        <p className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[15px] font-semibold text-gosi-rich-blue shadow-sm">
+          <span className="rounded-full bg-gosi-rich-blue px-2.5 py-0.5 text-[12px] font-semibold text-white">{retiree ? copy.aloneRetiree : copy.aloneSeeker}</span>
+          {name}
+        </p>
+      ) : null}
+    >
       <div data-live={live ? "1" : "0"} className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-gosi-midnight-10">
         <div className="relative flex items-center justify-between px-6 pb-1 pt-3 text-[13px] font-semibold text-gosi-rich-blue">
           <span className="w-14">{formatClock(new Date(now))}</span>

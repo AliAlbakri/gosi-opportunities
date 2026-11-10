@@ -312,25 +312,6 @@ export async function resubmit(personId: string, personaId: string, offerings: {
   return { ok: true as const };
 }
 
-export async function addServiceType(personId: string, personaId: string, serviceTypeId: string, description: string) {
-  const length = description.trim().length;
-  if (length < 80 || length > 800) return { ok: false as const, error: "Write a description between 80 and 800 characters." };
-  const { error } = await admin().from("retiree_service_types").insert({
-    person_id: personId,
-    service_type_id: serviceTypeId,
-    description,
-    status: "pending",
-  });
-  if (error) return { ok: false as const, error: "That Service Type is already on your profile." };
-  await audit(personaId, "rst.added", "retiree_profile", personId, { serviceTypeId });
-  await notifyOperators({
-    title: "New application to review",
-    body: "A retiree added a Service Type for review.",
-    linkFor: (operatorId) => `/ops/${operatorId}/review/${personId}`,
-  });
-  return { ok: true as const };
-}
-
 export async function updateLayer2(
   personId: string,
   personaId: string,

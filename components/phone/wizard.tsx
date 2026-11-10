@@ -202,7 +202,7 @@ export function Wizard({
             serviceTypes={serviceTypes}
             agreed={agreed}
             onEdit={(target) => { setReturnTo(5); setStep(target); }}
-            onAgree={() => setAgreed(true)}
+            onAgree={setAgreed}
           />
         )}
         {error && <p className="text-[13px] text-gosi-midnight-50">{error}</p>}

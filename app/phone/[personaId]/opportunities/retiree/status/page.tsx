@@ -1,14 +1,22 @@
 import { notFound } from "next/navigation";
-import { AddServiceForm } from "@/components/phone/profile-editors";
 import { ResubmitForm } from "@/components/phone/resubmit-form";
 import { getProfile, getServiceRows } from "@/lib/domain/applications";
 import { listWindows } from "@/lib/domain/availability";
 import { checklistDone } from "@/lib/domain/rules";
 import { requireUser } from "@/lib/domain/personas";
 import { getServiceTypes } from "@/lib/domain/settings";
+import { copy } from "@/lib/copy";
 import { REASON_CODES } from "@/lib/types";
 import { AppHeader } from "@/components/phone/ui/header";
+import { StatusPill } from "@/components/phone/ui/bits";
 import { Timeline } from "@/components/phone/ui/flow";
+
+const serviceStatus: Record<string, string> = {
+  pending: "Pending review",
+  approved: "Approved",
+  not_approved: "Not approved",
+  draft: "Draft",
+};
 
 export default async function StatusPage({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
@@ -28,21 +36,18 @@ export default async function StatusPage({ params }: { params: Promise<{ persona
         { title: "Get ready", state: live ? "done" : profile?.state === "active" ? "current" : "upcoming" },
         { title: "Live", state: live ? "current" : "upcoming" },
       ]} />
-      <p className="capitalize">{profile?.state?.replaceAll("_", " ")}</p>
+      {services.some((row) => row.status === "not_approved") ? null : (
+        <p className="text-[15px] leading-[22px] text-gosi-midnight-50">{services.some((row) => row.status === "pending") || profile?.state === "pending_review" ? copy.statusHeld : copy.statusClosed}</p>
+      )}
       {services.map((row) => (
-        <article key={row.id} className="rounded-3xl bg-white p-4">
-          <p className="font-medium">{names.get(row.service_type_id)}</p>
-          <span className={`inline-block rounded-full px-2 py-1 text-xs ${row.status === "approved" ? "bg-gosi-green-10" : "bg-gosi-midnight-10"}`}>{row.status.replaceAll("_", " ")}</span>
-          {row.reason_code && <p className="text-sm">{REASON_CODES[row.reason_code as keyof typeof REASON_CODES]} {row.reason_note}</p>}
+        <article key={row.id} className="rounded-[20px] bg-white p-4">
+          <p className="font-semibold">{names.get(row.service_type_id)}</p>
+          <div className="mt-2"><StatusPill>{serviceStatus[row.status] ?? row.status}</StatusPill></div>
+          {row.reason_code && <p className="mt-2 text-[13px] leading-[18px] text-gosi-midnight-80">{REASON_CODES[row.reason_code as keyof typeof REASON_CODES]}{row.reason_note ? ` ${row.reason_note}` : ""}</p>}
         </article>
       ))}
-      {!services.length && <p>No Service Types yet.</p>}
+      {!services.length && <p className="text-[15px] text-gosi-midnight-50">No Service Types yet.</p>}
       <ResubmitForm personId={user.person.id} personaId={personaId} rows={services.filter((row) => row.status === "not_approved").map((row) => ({ id: row.id, description: row.description }))} />
-      <AddServiceForm
-        personId={user.person.id}
-        personaId={personaId}
-        types={types.filter((type) => !services.some((row) => row.service_type_id === type.id)).map((type) => ({ id: type.id, name: type.name }))}
-      />
     </div>
   );
 }

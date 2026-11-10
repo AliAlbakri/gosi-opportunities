@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { addServiceType, removeDocument, resubmit, saveApplication, submitApplication, updateLayer2, uploadDocument, uploadPhoto } from "@/lib/domain/applications";
+import { removeDocument, resubmit, saveApplication, submitApplication, updateLayer2, uploadDocument, uploadPhoto } from "@/lib/domain/applications";
 import { markOnboardingWatched, markReadiness, replaceWindows, setAcceptingBookings } from "@/lib/domain/availability";
 import { cancelBooking, createBooking, expireHold, payBooking } from "@/lib/domain/bookings";
 import { saveFeedback } from "@/lib/domain/feedback";
@@ -175,12 +175,6 @@ export async function layer2Action(personId: string, personaId: string, input: u
   const parsedInput = parsed(schema, input);
   if (!parsedInput.ok) return parsedInput;
   const result = await updateLayer2(personId, personaId, parsedInput.data);
-  done();
-  return result;
-}
-
-export async function addServiceAction(personId: string, personaId: string, serviceTypeId: string, description: string) {
-  const result = await addServiceType(personId, personaId, serviceTypeId, description);
   done();
   return result;
 }

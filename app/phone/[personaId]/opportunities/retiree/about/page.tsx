@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Check } from "lucide-react";
 import { AppHeader } from "@/components/phone/ui/header";
 import { BrandIcon } from "@/components/phone/brand-icon";
 import { Card } from "@/components/phone/ui/bits";
@@ -69,12 +70,38 @@ export default async function AboutPage({ params }: { params: Promise<{ personaI
           ]} /></Card>
         </section>
         <section>
-          <h2 className="mb-3 text-lg font-semibold">What you’ll need</h2>
-          <Card><ul className="list-disc space-y-1 pl-4 text-[15px]"><li>Your GOSI record, which is already here</li><li>A short description of each service</li><li>Certificates or a CV, if you have them</li><li>A phone with a camera and internet</li></ul></Card>
+          <h2 className="mb-3 text-lg font-semibold">{copy.landing.needTitle}</h2>
+          <Card className="divide-y divide-gosi-midnight-10 px-4 py-1">
+            {copy.landing.needs.map((item) => (
+              <div key={item.text} className="flex items-center gap-3 py-3">
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${item.tone === "optional" ? "border border-gosi-midnight-25" : "bg-gosi-green-10"}`}>
+                  {item.tone === "optional" ? <span className="h-0.5 w-2.5 rounded-full bg-gosi-midnight-50" /> : <Check size={15} strokeWidth={2.5} />}
+                </span>
+                <p className="min-w-0 flex-1 text-[15px] leading-[22px]">{item.text}</p>
+                {item.tone !== "need" && (
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.tone === "ready" ? "bg-gosi-green-10" : "bg-gosi-midnight-10 text-gosi-midnight-80"}`}>
+                    {item.tone === "ready" ? copy.landing.ready : copy.landing.optional}
+                  </span>
+                )}
+              </div>
+            ))}
+          </Card>
         </section>
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Good to know</h2>
-          <Card><ul className="space-y-2 text-[15px]"><li>Sessions are one hour.</li><li>You can pause new bookings at any time.</li><li>Either side can cancel up to 3 hours before the start.</li><li>Terms are shown before you submit.</li></ul></Card>
+          <h2 className="mb-3 text-lg font-semibold">{copy.landing.knowTitle}</h2>
+          <Card className="divide-y divide-gosi-midnight-10 px-4 py-1">
+            {[{ icon: paidEnabled ? "financial-investment" : "benefits", label: copy.landing.price, value: paidEnabled ? copy.landing.priceOn : copy.landing.priceOff }, ...copy.landing.facts].map((fact) => (
+              <div key={fact.label} className="flex items-center gap-3 py-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-gosi-green-10">
+                  <BrandIcon name={fact.icon} className="h-6 w-6" />
+                </span>
+                <span className="min-w-0">
+                  <p className="text-[13px] leading-[18px] text-gosi-midnight-50">{fact.label}</p>
+                  <p className="text-[15px] font-semibold leading-[22px]">{fact.value}</p>
+                </span>
+              </div>
+            ))}
+          </Card>
         </section>
         <section>
           <h2 className="mb-3 text-lg font-semibold">FAQ</h2>

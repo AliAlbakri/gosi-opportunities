@@ -2,5 +2,11 @@
   <rect width="780" height="400" fill="#00004E"/>
   <path d="M520 40h220l-80 160 80 160H520L440 200z" fill="#333371"/>
   <circle cx="150" cy="190" r="54" fill="#E6F8E6"/>
+  <g transform="translate(150 192)" fill="none" stroke="#00004E" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M0-20c-11 8-22 8-33 0v34c11 8 22 8 33 0V-20z" fill="#fff"/>
+    <path d="M0-20c11 8 22 8 33 0v34c-11 8-22 8-33 0"/>
+    <path d="M0-20v34"/>
+    <path d="M-22-8h12M-20 0h10M10-8h12M12 0h10" stroke="#0064FF"/>
+  </g>
   <text x="230" y="200" fill="#fff" font-family="Inter, sans-serif" font-size="36" font-weight="600">Education and Training</text>
 </svg>

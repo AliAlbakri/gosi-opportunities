@@ -44,4 +44,4 @@ Jump to next booking sets app time to five minutes before that booking's start a
 
 The join request created the room and the Daily iframe loaded, but Daily Prebuilt stopped on its own camera check. `joined-meeting` never fired, so the other phone stayed on "hasn't joined yet". Rooms are now created and updated with `enable_prejoin_ui: false`. The lobby in the app is the only camera check. After that, the joined event is stored and the other phone shows "is waiting" from the presence broadcast.
 
-`tests/e2e/session.spec.ts` passed locally: reset, jump, both phones show Join now, both enter the call, presence appears before the second person joins, and the post-call screens are the seeker feedback form and the retiree "Session complete" page.
+`tests/e2e/session.spec.ts` passed locally and against the Vercel URL: reset, jump, both phones show Join now, both enter the call, presence appears before the second person joins, and the post-call screens are the seeker feedback form and the retiree "Session complete" page. `/tech/health` on Vercel shows Supabase reachable and Daily configured.
